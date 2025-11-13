@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+const API_BASE_URL = 'http://localhost:5000/api';
 
 export interface PredictionResult {
   model1?: {
@@ -37,23 +37,31 @@ class ApiService {
     this.baseURL = API_BASE_URL;
   }
 
-  async uploadResume(file: File, model: 'clf1' | 'clf2' | 'both' = 'both'): Promise<UploadResponse> {
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('model', model);
+ async uploadResume(file: File, model: 'clf1' | 'clf2' | 'both' = 'both'): Promise<UploadResponse> {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('model', model);
 
-    const response = await fetch(`${this.baseURL}/resume/upload`, {
-      method: 'POST',
-      body: formData,
-    });
+ const response = await fetch(`${this.baseURL}/resume/upload`, {
+  method: 'POST',
+  body: formData,
+});
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to upload resume');
-    }
+const text = await response.text(); // always read as text first
+let data: any;
+try {
+  data = JSON.parse(text); // try to parse JSON
+} catch (err) {
+  throw new Error(`Server returned invalid JSON: ${text}`);
+}
 
-    return response.json();
-  }
+if (!response.ok) {
+  throw new Error(data?.error || 'Failed to upload resume');
+}
+
+return data;
+
+}
 
   async predictFromText(text: string, model: 'clf1' | 'clf2' | 'both' = 'both'): Promise<PredictResponse> {
     const response = await fetch(`${this.baseURL}/resume/predict`, {
