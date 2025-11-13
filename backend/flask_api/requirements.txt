@@ -1,0 +1,16 @@
+# Core Flask packages
+flask>=3.0.0
+flask-cors>=4.0.0
+werkzeug>=3.1.0
+blinker>=1.9.0
+click>=8.0.0
+itsdangerous>=2.0.0
+jinja2>=3.1.0
+
+# Data & ML packages
+numpy>=1.24.0
+pandas>=2.0.0
+scipy>=1.10.0
+scikit-learn>=1.3.0
+joblib>=1.2.0
+threadpoolctl>=3.0.0
