@@ -1,24 +1,27 @@
-import React from 'react';
-import logo from './logo.svg';
+import React, { useState } from 'react';
+import ResumeUpload from './components/ResumeUpload';
+import ModelResults from './components/ModelResults';
+import { PredictionResult } from './services/api';
 import './App.css';
 
 function App() {
+  const [predictions, setPredictions] = useState<PredictionResult | null>(null);
+
+  const handlePredictionComplete = (results: PredictionResult) => {
+    setPredictions(results);
+  };
+
   return (
     <div className="App">
       <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
+        <h1>ResuSight</h1>
+        <p>Intelligent Resume Screening and Job Matching System</p>
       </header>
+      
+      <main className="App-main">
+        <ResumeUpload onPredictionComplete={handlePredictionComplete} />
+        <ModelResults predictions={predictions} />
+      </main>
     </div>
   );
 }
