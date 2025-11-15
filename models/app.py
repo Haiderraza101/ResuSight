@@ -1,8 +1,8 @@
 import streamlit as st
 import io
 import base64
-import re   
-import pickle 
+import re
+import pickle
 import matplotlib.pyplot as plt
 from PyPDF2 import PdfReader
 from sklearn.metrics import (
@@ -27,17 +27,28 @@ except FileNotFoundError:
 
 # =========================== CLEANING FUNCTION ===========================
 def clean_text(text):
-    clean_txt = re.sub(r'http\S+', '', text)
-    clean_txt = re.sub(r'@[A-Za-z0-9]+', '', clean_txt)
-    clean_txt = re.sub(r'#', '', clean_txt)
-    clean_txt = re.sub(r'[^A-Za-z0-9\s]+', '', clean_txt)
+    clean_txt = text
+    # 2. Remove backlash since experience includes date in dd\mm\yy
+    clean_txt = re.sub(r'\\', ' ', clean_txt)
+    # 3. Remove common metadata/headers (RT, cc, etc.)
     clean_txt = re.sub(r'RT|cc|CC|rt', '', clean_txt)
-    clean_txt = re.sub(r'\s+', ' ', clean_txt)
-    return clean_txt.strip()
+    # 4. Remove URLs
+    clean_txt = re.sub(r'http\S+', '', clean_txt)
+    # 5. Remove mentions
+    clean_txt = re.sub(r'@[A-Za-z0-9]+', '', clean_txt)
+    # 6. Remove hashtags
+    clean_txt = re.sub(r'#', '', clean_txt)
+    # 7. Remove special characters and punctuation (use on clean_txt)
+    clean_txt = re.sub(r'[^A-Za-z0-9\s]+', '', clean_txt)
+    # 8. Remove extra spaces
+    clean_txt = re.sub(r'\s+', ' ', clean_txt).strip() # .strip() removes leading/trailing space
+    # 9 I found NaN in some resumes
+    clean_txt = re.sub(r'NaN', ' ', clean_txt).strip() # .strip() removes leading/trailing space
+    return clean_txt
 
 
 # =========================== STREAMLIT UI ===========================
-st.title("📄 CV Parser")
+st.title("CV Parser")
 
 uploaded_file = st.file_uploader("Upload Resume:", type=["txt", "pdf"])
 
