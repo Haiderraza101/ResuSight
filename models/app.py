@@ -4,6 +4,11 @@ import base64
 import re
 import pickle
 import matplotlib.pyplot as plt
+import os
+import pandas as pd
+import numpy as np
+import torch
+import torch.nn as nn
 from PyPDF2 import PdfReader
 from sklearn.metrics import (
     accuracy_score, precision_score, recall_score, f1_score,
@@ -11,40 +16,29 @@ from sklearn.metrics import (
     top_k_accuracy_score
 )
 
-# =========================== MODEL LOADING ===========================
-# NOTE: These files must exist in the same directory as the script to run.
-try:
-    clf1 = pickle.load(open('clf1.pkl', 'rb'))
-    clf2 = pickle.load(open('clf2.pkl', 'rb'))
-    tfidf = pickle.load(open('tfidf.pkl', 'rb'))
-    le = pickle.load(open('le.pkl', 'rb'))
-    x_test = pickle.load(open('x_test.pkl', 'rb'))
-    y_test = pickle.load(open('y_test.pkl', 'rb'))
-except FileNotFoundError:
-    st.error("Model files (clf1.pkl, clf2.pkl, etc.) not found. Please ensure they are in the correct directory.")
-    st.stop()
-
 
 # =========================== CLEANING FUNCTION ===========================
 def clean_text(text):
-    clean_txt = text
-    # 2. Remove backlash since experience includes date in dd\mm\yy
-    clean_txt = re.sub(r'\\', ' ', clean_txt)
-    # 3. Remove common metadata/headers (RT, cc, etc.)
-    clean_txt = re.sub(r'RT|cc|CC|rt', '', clean_txt)
-    # 4. Remove URLs
-    clean_txt = re.sub(r'http\S+', '', clean_txt)
-    # 5. Remove mentions
-    clean_txt = re.sub(r'@[A-Za-z0-9]+', '', clean_txt)
-    # 6. Remove hashtags
-    clean_txt = re.sub(r'#', '', clean_txt)
-    # 7. Remove special characters and punctuation (use on clean_txt)
-    clean_txt = re.sub(r'[^A-Za-z0-9\s]+', '', clean_txt)
-    # 8. Remove extra spaces
-    clean_txt = re.sub(r'\s+', ' ', clean_txt).strip() # .strip() removes leading/trailing space
-    # 9 I found NaN in some resumes
-    clean_txt = re.sub(r'NaN', ' ', clean_txt).strip() # .strip() removes leading/trailing space
-    return clean_txt
+    if pd.isna(text):
+        return ""
+    clean_txt = str(text)
+    clean_txt = re.sub(r'\S+@\S+', ' ', clean_txt)
+    clean_txt = re.sub(r'http\S+', ' ', clean_txt)
+    replacements = {
+        "C++": "CPLUSPLUS", "c++": "CPLUSPLUS",
+        "C#": "CSHARP", "c#": "CSHARP",
+        ".NET": "DOTNET", ".net": "DOTNET",
+        "Node.js": "NODEJS", "node.js": "NODEJS"
+    }
+    for k, v in replacements.items():
+        clean_txt = clean_txt.replace(k, v)
+    clean_txt = re.sub(r'[^A-Za-z0-9+\#\./\s]', ' ', clean_txt)
+    clean_txt = re.sub(r'\s+', ' ', clean_txt).strip()
+    inv = {v: k.lower() for k, v in replacements.items()}
+    for k, v in inv.items():
+        clean_txt = clean_txt.replace(k, v)
+    return clean_txt.lower().strip()
+
 
 
 # =========================== STREAMLIT UI ===========================
@@ -105,89 +99,168 @@ if uploaded_file:
         prediction_ML_model1 = clf1.predict(vectorized_resume)[0]
         category_mapping = dict(enumerate(le.classes_))
         result_ML_model1 = category_mapping.get(prediction_ML_model1, "Unknown")
-        st.success(f"Predicted Job Category by **ML_model1**: {result_ML_model1}")
+        st.success(f"Predicted Job Category by **ML_model1 (SVM)**: {result_ML_model1}")
 
         # ===================== MODEL 2 PREDICTION =====================
         prediction_ML_model2 = clf2.predict(vectorized_resume)[0]
         result_ML_model2 = category_mapping.get(prediction_ML_model2, "Unknown")
-        st.success(f"Predicted Job Category by **ML_model2**: {result_ML_model2}")
+        st.success(f"Predicted Job Category by **ML_model2 (Logistic Regression)**: {result_ML_model2}")
 
-        # ===================== MODEL 1 EVALUATION TOGGLE =====================
-        if "show_eval_ml1" not in st.session_state:
-            st.session_state["show_eval_ml1"] = False
+        # ===================== MODEL 3 PREDICTION =====================
+        prediction_ML_model3 = clf3.predict(vectorized_resume)[0]
+        result_ML_model3 = category_mapping.get(prediction_ML_model3, "Unknown")
+        st.success(f"Predicted Job Category by **ML_model3 (Random Forest)**: {result_ML_model3}")
 
-        button_label_1 = (
-            "Hide ML_model1 Evaluation" if st.session_state["show_eval_ml1"]
-            else "Show ML_model1 Evaluation"
+        # ===================== MODEL 4 PREDICTION =====================
+        prediction_ML_model4 = clf4.predict(vectorized_resume)[0]
+        result_ML_model4 = category_mapping.get(prediction_ML_model4, "Unknown")
+        st.success(f"Predicted Job Category by **ML_model4 (XGBoost)**: {result_ML_model4}")
+
+
+        # ===================== MODEL 1 EVALUATION =====================
+        st.subheader("📊 ML_model1 (SVM) Evaluation Metrics")
+        y_pred1 = clf1.predict(x_test)
+        y_proba1 = clf1.predict_proba(x_test)
+
+        cm = confusion_matrix(y_test, y_pred1)
+        fig, ax = plt.subplots(figsize=(10, 8))
+        ConfusionMatrixDisplay(cm, display_labels=le.classes_).plot(
+            ax=ax, cmap='Blues', xticks_rotation='vertical'
         )
+        ax.set_title("Confusion Matrix (ML_model1 - SVM)")
+        fig.tight_layout()
+        st.pyplot(fig)
 
-        if st.button(button_label_1):
-            st.session_state["show_eval_ml1"] = not st.session_state["show_eval_ml1"]
+        accuracy1 = accuracy_score(y_test, y_pred1)
+        precision1 = precision_score(y_test, y_pred1, average='weighted', zero_division=0)
+        recall1 = recall_score(y_test, y_pred1, average='weighted', zero_division=0)
+        f1_score1 = f1_score(y_test, y_pred1, average='weighted')
+        auc1 = roc_auc_score(y_test, y_proba1, multi_class='ovr')
+        top3_acc1 = top_k_accuracy_score(y_test, y_proba1, k=3)
 
-        if st.session_state["show_eval_ml1"]:
-            y_pred1 = clf1.predict(x_test)
-            y_proba1 = clf1.predict_proba(x_test)
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("Accuracy", f"{accuracy1:.4f}")
+        with col2:
+            st.metric("Precision", f"{precision1:.4f}")
+        with col3:
+            st.metric("Recall", f"{recall1:.4f}")
+        
+        col4, col5, col6 = st.columns(3)
+        with col4:
+            st.metric("F1 Score", f"{f1_score1:.4f}")
+        with col5:
+            st.metric("AUC", f"{auc1:.4f}")
+        with col6:
+            st.metric("Top-3 Accuracy", f"{top3_acc1:.4f}")
 
-            cm = confusion_matrix(y_test, y_pred1)
-            fig, ax = plt.subplots(figsize=(10, 10))
-            ConfusionMatrixDisplay(cm, display_labels=le.classes_).plot(
-                ax=ax, cmap='Blues', xticks_rotation='vertical'
-            )
-            ax.set_title("Confusion Matrix (ML_model1)")
-            fig.tight_layout()
-            st.pyplot(fig)
+        # ===================== MODEL 2 EVALUATION =====================
+        st.subheader("📊 ML_model2 (Logistic Regression) Evaluation Metrics")
+        y_pred2 = clf2.predict(x_test)
+        y_proba2 = clf2.predict_proba(x_test)
 
-            accuracy1 = accuracy_score(y_test, y_pred1)
-            precision1 = precision_score(y_test, y_pred1, average='weighted', zero_division=0)
-            recall1 = recall_score(y_test, y_pred1, average='weighted', zero_division=0)
-            f1_score1 = f1_score(y_test, y_pred1, average='weighted')
-            auc1 = roc_auc_score(y_test, y_proba1, multi_class='ovr')
-            top3_acc1 = top_k_accuracy_score(y_test, y_proba1, k=3)
-
-            st.subheader("Model 1 Evaluation Metrics (Test Set)")
-            st.write(f"**Accuracy:** {accuracy1:.4f}")
-            st.write(f"**Precision:** {precision1:.4f}")
-            st.write(f"**Recall:** {recall1:.4f}")
-            st.write(f"**F1 Score:** {f1_score1:.4f}")
-            st.write(f"**AUC:** {auc1:.4f}")
-            st.write(f"**Top-3 Accuracy:** {top3_acc1:.4f}")
-
-        # ===================== MODEL 2 EVALUATION TOGGLE =====================
-        if "show_eval_ml2" not in st.session_state:
-            st.session_state["show_eval_ml2"] = False
-
-        button_label_2 = (
-            "Hide ML_model2 Evaluation" if st.session_state["show_eval_ml2"]
-            else "Show ML_model2 Evaluation"
+        cm = confusion_matrix(y_test, y_pred2)
+        fig, ax = plt.subplots(figsize=(10, 8))
+        ConfusionMatrixDisplay(cm, display_labels=le.classes_).plot(
+            ax=ax, cmap='Blues', xticks_rotation='vertical'
         )
+        ax.set_title("Confusion Matrix (ML_model2 - Logistic Regression)")
+        fig.tight_layout()
+        st.pyplot(fig)
 
-        if st.button(button_label_2):
-            st.session_state["show_eval_ml2"] = not st.session_state["show_eval_ml2"]
+        accuracy2 = accuracy_score(y_test, y_pred2)
+        precision2 = precision_score(y_test, y_pred2, average='weighted', zero_division=0)
+        recall2 = recall_score(y_test, y_pred2, average='weighted', zero_division=0)
+        f1_score2 = f1_score(y_test, y_pred2, average='weighted')
+        auc2 = roc_auc_score(y_test, y_proba2, multi_class='ovr')
+        top3_acc2 = top_k_accuracy_score(y_test, y_proba2, k=3)
 
-        if st.session_state["show_eval_ml2"]:
-            y_pred2 = clf2.predict(x_test)
-            y_proba2 = clf2.predict_proba(x_test)
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("Accuracy", f"{accuracy2:.4f}")
+        with col2:
+            st.metric("Precision", f"{precision2:.4f}")
+        with col3:
+            st.metric("Recall", f"{recall2:.4f}")
+        
+        col4, col5, col6 = st.columns(3)
+        with col4:
+            st.metric("F1 Score", f"{f1_score2:.4f}")
+        with col5:
+            st.metric("AUC", f"{auc2:.4f}")
+        with col6:
+            st.metric("Top-3 Accuracy", f"{top3_acc2:.4f}")
 
-            cm = confusion_matrix(y_test, y_pred2)
-            fig, ax = plt.subplots(figsize=(10, 10))
-            ConfusionMatrixDisplay(cm, display_labels=le.classes_).plot(
-                ax=ax, cmap='Blues', xticks_rotation='vertical'
-            )
-            ax.set_title("Confusion Matrix (ML_model2)")
-            fig.tight_layout()
-            st.pyplot(fig)
+        # ===================== MODEL 3 EVALUATION =====================
+        st.subheader("📊 ML_model3 (Random Forest) Evaluation Metrics")
+        y_pred3 = clf3.predict(x_test)
+        y_proba3 = clf3.predict_proba(x_test)
 
-            accuracy2 = accuracy_score(y_test, y_pred2)
-            precision2 = precision_score(y_test, y_pred2, average='weighted', zero_division=0)
-            recall2 = recall_score(y_test, y_pred2, average='weighted', zero_division=0)
-            f1_score2 = f1_score(y_test, y_pred2, average='weighted')
-            auc2 = roc_auc_score(y_test, y_proba2, multi_class='ovr')
-            top3_acc2 = top_k_accuracy_score(y_test, y_proba2, k=3)
+        cm = confusion_matrix(y_test, y_pred3)
+        fig, ax = plt.subplots(figsize=(10, 8))
+        ConfusionMatrixDisplay(cm, display_labels=le.classes_).plot(
+            ax=ax, cmap='Blues', xticks_rotation='vertical'
+        )
+        ax.set_title("Confusion Matrix (ML_model3 - Random Forest)")
+        fig.tight_layout()
+        st.pyplot(fig)
 
-            st.subheader("Model 2 Evaluation Metrics (Test Set)")
-            st.write(f"**Accuracy:** {accuracy2:.4f}")
-            st.write(f"**Precision:** {precision2:.4f}")
-            st.write(f"**Recall:** {recall2:.4f}")
-            st.write(f"**F1 Score:** {f1_score2:.4f}")
-            st.write(f"**AUC:** {auc2:.4f}")
-            st.write(f"**Top-3 Accuracy:** {top3_acc2:.4f}")
+        accuracy3 = accuracy_score(y_test, y_pred3)
+        precision3 = precision_score(y_test, y_pred3, average='weighted', zero_division=0)
+        recall3 = recall_score(y_test, y_pred3, average='weighted', zero_division=0)
+        f1_score3 = f1_score(y_test, y_pred3, average='weighted')
+        auc3 = roc_auc_score(y_test, y_proba3, multi_class='ovr')
+        top3_acc3 = top_k_accuracy_score(y_test, y_proba3, k=3)
+
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("Accuracy", f"{accuracy3:.4f}")
+        with col2:
+            st.metric("Precision", f"{precision3:.4f}")
+        with col3:
+            st.metric("Recall", f"{recall3:.4f}")
+        
+        col4, col5, col6 = st.columns(3)
+        with col4:
+            st.metric("F1 Score", f"{f1_score3:.4f}")
+        with col5:
+            st.metric("AUC", f"{auc3:.4f}")
+        with col6:
+            st.metric("Top-3 Accuracy", f"{top3_acc3:.4f}")
+
+        # ===================== MODEL 4 EVALUATION =====================
+        st.subheader("📊 ML_model4 (XGBoost) Evaluation Metrics")
+        y_pred4 = clf4.predict(x_test)
+        y_proba4 = clf4.predict_proba(x_test)
+
+        cm = confusion_matrix(y_test, y_pred4)
+        fig, ax = plt.subplots(figsize=(10, 8))
+        ConfusionMatrixDisplay(cm, display_labels=le.classes_).plot(
+            ax=ax, cmap='Blues', xticks_rotation='vertical'
+        )
+        ax.set_title("Confusion Matrix (ML_model4 - XGBoost)")
+        fig.tight_layout()
+        st.pyplot(fig)
+
+        accuracy4 = accuracy_score(y_test, y_pred4)
+        precision4 = precision_score(y_test, y_pred4, average='weighted', zero_division=0)
+        recall4 = recall_score(y_test, y_pred4, average='weighted', zero_division=0)
+        f1_score4 = f1_score(y_test, y_pred4, average='weighted')
+        auc4 = roc_auc_score(y_test, y_proba4, multi_class='ovr')
+        top3_acc4 = top_k_accuracy_score(y_test, y_proba4, k=3)
+
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("Accuracy", f"{accuracy4:.4f}")
+        with col2:
+            st.metric("Precision", f"{precision4:.4f}")
+        with col3:
+            st.metric("Recall", f"{recall4:.4f}")
+        
+        col4, col5, col6 = st.columns(3)
+        with col4:
+            st.metric("F1 Score", f"{f1_score4:.4f}")
+        with col5:
+            st.metric("AUC", f"{auc4:.4f}")
+        with col6:
+            st.metric("Top-3 Accuracy", f"{top3_acc4:.4f}")
