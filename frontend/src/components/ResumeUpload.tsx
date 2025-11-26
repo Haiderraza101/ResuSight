@@ -61,7 +61,7 @@ const ResumeUpload: React.FC<ResumeUploadProps> = ({ onPredictionComplete }) => 
     setError(null);
 
     try {
-      const response = await ApiService.uploadResume(file, 'both');
+      const response = await ApiService.uploadResume(file, 'all');
       setUploadResponse(response);
       onPredictionComplete(response.predictions);
     } catch (err: any) {

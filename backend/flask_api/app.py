@@ -25,10 +25,10 @@ def predict():
             return jsonify({"error": "Missing 'text' field in request body"}), 400
         
         resume_text = data['text']
-        model_name = data.get('model', 'both')
+        model_name = data.get('model', 'all')
         
-        if model_name not in ['clf1', 'clf2', 'both']:
-            return jsonify({"error": "Invalid model name. Use 'clf1', 'clf2', or 'both'"}), 400
+        if model_name not in ['clf1', 'clf2', 'clf3', 'clf4', 'both', 'all']:
+            return jsonify({"error": "Invalid model name. Use 'clf1', 'clf2', 'clf3', 'clf4', 'both', or 'all'"}), 400
         
         results = model_loader.predict(resume_text, model_name)
         if 'error' in results:
@@ -63,6 +63,27 @@ def get_categories():
         category_mapping = dict(enumerate(model_loader.le.classes_))
         categories = [{"id": k, "name": v} for k, v in category_mapping.items()]
         return jsonify({"success": True, "categories": categories}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/evaluate', methods=['GET', 'POST'])
+def evaluate():
+    """Evaluate model(s) on test data"""
+    try:
+        if request.method == 'POST':
+            data = request.get_json() or {}
+            model_name = data.get('model', 'all')
+        else:
+            model_name = request.args.get('model', 'all')
+        
+        if model_name not in ['clf1', 'clf2', 'clf3', 'clf4', 'all']:
+            return jsonify({"error": "Invalid model name. Use 'clf1', 'clf2', 'clf3', 'clf4', or 'all'"}), 400
+        
+        results = model_loader.evaluate(model_name)
+        if 'error' in results:
+            return jsonify(results), 400
+        
+        return jsonify({"success": True, "results": results}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

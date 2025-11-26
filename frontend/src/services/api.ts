@@ -13,6 +13,41 @@ export interface PredictionResult {
     confidence: number | null;
     probabilities?: { [key: string]: number };
   };
+  model3?: {
+    prediction: number;
+    category: string;
+    confidence: number | null;
+    probabilities?: { [key: string]: number };
+  };
+  model4?: {
+    prediction: number;
+    category: string;
+    confidence: number | null;
+    probabilities?: { [key: string]: number };
+  };
+}
+
+export interface EvaluationResult {
+  model_name: string;
+  accuracy: number;
+  precision: number;
+  recall: number;
+  f1_score: number;
+  auc: number | null;
+  top3_accuracy: number | null;
+  confusion_matrix: number[][];
+  labels: string[];
+}
+
+export interface EvaluationResponse {
+  success: boolean;
+  results: {
+    model1?: EvaluationResult;
+    model2?: EvaluationResult;
+    model3?: EvaluationResult;
+    model4?: EvaluationResult;
+  };
+  error?: string;
 }
 
 export interface UploadResponse {
@@ -37,7 +72,7 @@ class ApiService {
     this.baseURL = API_BASE_URL;
   }
 
- async uploadResume(file: File, model: 'clf1' | 'clf2' | 'both' = 'both'): Promise<UploadResponse> {
+ async uploadResume(file: File, model: 'clf1' | 'clf2' | 'clf3' | 'clf4' | 'both' | 'all' = 'all'): Promise<UploadResponse> {
   const formData = new FormData();
   formData.append('file', file);
   formData.append('model', model);
@@ -63,7 +98,7 @@ return data;
 
 }
 
-  async predictFromText(text: string, model: 'clf1' | 'clf2' | 'both' = 'both'): Promise<PredictResponse> {
+  async predictFromText(text: string, model: 'clf1' | 'clf2' | 'clf3' | 'clf4' | 'both' | 'all' = 'all'): Promise<PredictResponse> {
     const response = await fetch(`${this.baseURL}/resume/predict`, {
       method: 'POST',
       headers: {
@@ -86,6 +121,17 @@ return data;
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.error || 'Failed to get categories');
+    }
+
+    return response.json();
+  }
+
+  async getEvaluation(model: 'clf1' | 'clf2' | 'clf3' | 'clf4' | 'all' = 'all'): Promise<EvaluationResponse> {
+    const response = await fetch(`${this.baseURL}/resume/evaluate?model=${model}`);
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to get evaluation');
     }
 
     return response.json();

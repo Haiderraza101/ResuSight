@@ -64,7 +64,7 @@ router.post("/upload", upload.single('file'), async (req: Request, res: Response
     }
 
     // Get predictions from Flask API
-    const model = (req.body.model as 'clf1' | 'clf2' | 'both') || 'both';
+    const model = (req.body.model as 'clf1' | 'clf2' | 'clf3' | 'clf4' | 'both' | 'all') || 'all';
     const prediction = await flaskService.predictFromFile(resumeText, model);
 
     res.json({
@@ -91,7 +91,7 @@ router.post("/predict", async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Text is required" });
     }
 
-    const modelType = (model as 'clf1' | 'clf2' | 'both') || 'both';
+    const modelType = (model as 'clf1' | 'clf2' | 'clf3' | 'clf4' | 'both' | 'all') || 'all';
     const prediction = await flaskService.predictResume(text, modelType);
 
     res.json({
@@ -115,6 +115,20 @@ router.get("/categories", async (req: Request, res: Response) => {
     console.error("Error getting categories:", error);
     res.status(500).json({ 
       error: error.message || "Failed to get categories" 
+    });
+  }
+});
+
+// Route: Evaluate models
+router.get("/evaluate", async (req: Request, res: Response) => {
+  try {
+    const model = (req.query.model as 'clf1' | 'clf2' | 'clf3' | 'clf4' | 'all') || 'all';
+    const evaluation = await flaskService.evaluateModels(model);
+    res.json(evaluation);
+  } catch (error: any) {
+    console.error("Error evaluating models:", error);
+    res.status(500).json({ 
+      error: error.message || "Failed to evaluate models" 
     });
   }
 });

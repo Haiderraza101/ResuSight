@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import ResumeUpload from './components/ResumeUpload';
 import ModelResults from './components/ModelResults';
+import EvaluationMetrics from './components/EvaluationMetrics';
 import HeroSection from './components/HeroSection';
 import FeaturesSection from './components/FeaturesSection';
 import TrustedBySection from './components/TrustedBySection';
@@ -28,6 +29,7 @@ function App() {
             <div className="nav-links">
               <a href="#features" className="nav-link">Features</a>
               <a href="#upload" className="nav-link">Try It</a>
+              <a href="#evaluation" className="nav-link">Evaluation</a>
               <a href="#benefits" className="nav-link">Benefits</a>
             </div>
             <div className="nav-actions">
@@ -66,6 +68,13 @@ function App() {
             <ResumeUpload onPredictionComplete={handlePredictionComplete} />
             <ModelResults predictions={predictions} extractedText={extractedText} />
           </div>
+        </div>
+      </section>
+
+      {/* Evaluation Metrics Section */}
+      <section id="evaluation" className="section">
+        <div className="section-container">
+          <EvaluationMetrics />
         </div>
       </section>
 

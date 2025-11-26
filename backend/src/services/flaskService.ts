@@ -15,6 +15,41 @@ export interface PredictionResult {
     confidence: number | null;
     probabilities?: { [key: string]: number };
   };
+  model3?: {
+    prediction: number;
+    category: string;
+    confidence: number | null;
+    probabilities?: { [key: string]: number };
+  };
+  model4?: {
+    prediction: number;
+    category: string;
+    confidence: number | null;
+    probabilities?: { [key: string]: number };
+  };
+}
+
+export interface EvaluationResult {
+  model_name: string;
+  accuracy: number;
+  precision: number;
+  recall: number;
+  f1_score: number;
+  auc: number | null;
+  top3_accuracy: number | null;
+  confusion_matrix: number[][];
+  labels: string[];
+}
+
+export interface EvaluationResponse {
+  success: boolean;
+  results: {
+    model1?: EvaluationResult;
+    model2?: EvaluationResult;
+    model3?: EvaluationResult;
+    model4?: EvaluationResult;
+  };
+  error?: string;
 }
 
 export interface FlaskResponse {
@@ -30,7 +65,7 @@ class FlaskService {
     this.baseURL = FLASK_API_URL;
   }
 
-  async predictResume(text: string, model: 'clf1' | 'clf2' | 'both' = 'both'): Promise<FlaskResponse> {
+  async predictResume(text: string, model: 'clf1' | 'clf2' | 'clf3' | 'clf4' | 'both' | 'all' = 'all'): Promise<FlaskResponse> {
     try {
       const response = await axios.post<FlaskResponse>(`${this.baseURL}/predict`, {
         text,
@@ -46,7 +81,7 @@ class FlaskService {
     }
   }
 
-  async predictFromFile(text: string, model: 'clf1' | 'clf2' | 'both' = 'both'): Promise<FlaskResponse> {
+  async predictFromFile(text: string, model: 'clf1' | 'clf2' | 'clf3' | 'clf4' | 'both' | 'all' = 'all'): Promise<FlaskResponse> {
     try {
       const response = await axios.post<FlaskResponse>(`${this.baseURL}/predict/file`, {
         text,
@@ -58,6 +93,21 @@ class FlaskService {
         error.response?.data?.error || 
         error.message || 
         'Failed to get prediction from Flask API'
+      );
+    }
+  }
+
+  async evaluateModels(model: 'clf1' | 'clf2' | 'clf3' | 'clf4' | 'all' = 'all'): Promise<EvaluationResponse> {
+    try {
+      const response = await axios.get<EvaluationResponse>(`${this.baseURL}/evaluate`, {
+        params: { model }
+      });
+      return response.data;
+    } catch (error: any) {
+      throw new Error(
+        error.response?.data?.error || 
+        error.message || 
+        'Failed to get evaluation from Flask API'
       );
     }
   }

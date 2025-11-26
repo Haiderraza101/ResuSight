@@ -178,8 +178,152 @@ const ModelResults: React.FC<ModelResultsProps> = ({ predictions, extractedText 
           </div>
         )}
 
+        {predictions.model3 && (
+          <div className="model-card">
+            <div className="model-header">
+              <div className="model-header-content">
+                <div className="model-icon-wrapper green">
+                  <span className="model-icon">🌲</span>
+                </div>
+                <div className="model-info">
+                  <h4 className="model-name">Model 3: Random Forest</h4>
+                  <p className="model-type">Ensemble Learning Model</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="model-content">
+              <div className="model-category-card green">
+                <div className="model-category-row">
+                  <span className="model-category-label">Predicted Category</span>
+                  <span className="model-category-value green">{predictions.model3.category}</span>
+                </div>
+              </div>
+              
+              {predictions.model3.confidence !== null && (
+                <div className="model-confidence">
+                  <div className="model-confidence-row">
+                    <span className="model-confidence-label">Confidence</span>
+                    <span className="model-confidence-value">
+                      {(predictions.model3.confidence * 100).toFixed(2)}%
+                    </span>
+                  </div>
+                  <div className="model-confidence-bar">
+                    <div
+                      className="model-confidence-fill green"
+                      style={{ width: `${predictions.model3.confidence * 100}%` }}
+                    ></div>
+                  </div>
+                </div>
+              )}
+              
+              {predictions.model3.probabilities && (
+                <div className="model-probabilities">
+                  <h5 className="model-probabilities-title">Top Probabilities</h5>
+                  <div className="model-probabilities-list">
+                    {Object.entries(predictions.model3.probabilities)
+                      .sort(([, a], [, b]) => b - a)
+                      .slice(0, 5)
+                      .map(([category, prob], index) => (
+                        <div key={category} className="model-probability-item">
+                          <div className="model-probability-content">
+                            <span className="model-probability-number">{index + 1}.</span>
+                            <span className="model-probability-name">{category}</span>
+                          </div>
+                          <div className="model-probability-bar-wrapper">
+                            <div className="model-probability-bar">
+                              <div
+                                className="model-probability-fill green"
+                                style={{ width: `${prob * 100}%` }}
+                              ></div>
+                            </div>
+                            <span className="model-probability-percent">
+                              {(prob * 100).toFixed(1)}%
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {predictions.model4 && (
+          <div className="model-card">
+            <div className="model-header">
+              <div className="model-header-content">
+                <div className="model-icon-wrapper orange">
+                  <span className="model-icon">⚡</span>
+                </div>
+                <div className="model-info">
+                  <h4 className="model-name">Model 4: XGBoost</h4>
+                  <p className="model-type">Gradient Boosting Model</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="model-content">
+              <div className="model-category-card orange">
+                <div className="model-category-row">
+                  <span className="model-category-label">Predicted Category</span>
+                  <span className="model-category-value orange">{predictions.model4.category}</span>
+                </div>
+              </div>
+              
+              {predictions.model4.confidence !== null && (
+                <div className="model-confidence">
+                  <div className="model-confidence-row">
+                    <span className="model-confidence-label">Confidence</span>
+                    <span className="model-confidence-value">
+                      {(predictions.model4.confidence * 100).toFixed(2)}%
+                    </span>
+                  </div>
+                  <div className="model-confidence-bar">
+                    <div
+                      className="model-confidence-fill orange"
+                      style={{ width: `${predictions.model4.confidence * 100}%` }}
+                    ></div>
+                  </div>
+                </div>
+              )}
+              
+              {predictions.model4.probabilities && (
+                <div className="model-probabilities">
+                  <h5 className="model-probabilities-title">Top Probabilities</h5>
+                  <div className="model-probabilities-list">
+                    {Object.entries(predictions.model4.probabilities)
+                      .sort(([, a], [, b]) => b - a)
+                      .slice(0, 5)
+                      .map(([category, prob], index) => (
+                        <div key={category} className="model-probability-item">
+                          <div className="model-probability-content">
+                            <span className="model-probability-number">{index + 1}.</span>
+                            <span className="model-probability-name">{category}</span>
+                          </div>
+                          <div className="model-probability-bar-wrapper">
+                            <div className="model-probability-bar">
+                              <div
+                                className="model-probability-fill orange"
+                                style={{ width: `${prob * 100}%` }}
+                              ></div>
+                            </div>
+                            <span className="model-probability-percent">
+                              {(prob * 100).toFixed(1)}%
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Comparison Card */}
-        {predictions.model1 && predictions.model2 && (
+        {(predictions.model1 || predictions.model2 || predictions.model3 || predictions.model4) && (
           <div className="model-comparison">
             <h4 className="model-comparison-title">
               <svg className="model-comparison-icon" fill="currentColor" viewBox="0 0 20 20">
@@ -189,32 +333,12 @@ const ModelResults: React.FC<ModelResultsProps> = ({ predictions, extractedText 
               Model Comparison
             </h4>
             
-            {predictions.model1.category === predictions.model2.category ? (
-              <div className="model-comparison-agree">
-                <div className="model-comparison-agree-content">
-                  <svg className="model-comparison-agree-icon" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  <div>
-                    <p className="model-comparison-agree-text">Models Agree</p>
-                    <p className="model-comparison-agree-detail">Both models predict: <strong>{predictions.model1.category}</strong></p>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="model-comparison-disagree">
-                <div className="model-comparison-disagree-header">
-                  <svg className="model-comparison-disagree-icon" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                  </svg>
-                  <p className="model-comparison-disagree-title">Models Disagree</p>
-                </div>
-                <div className="model-comparison-disagree-list">
-                  <p>• Model 1 (KNN): <strong>{predictions.model1.category}</strong></p>
-                  <p>• Model 2 (Logistic Regression): <strong>{predictions.model2.category}</strong></p>
-                </div>
-              </div>
-            )}
+            <div className="model-comparison-list">
+              {predictions.model1 && <p>• Model 1 (KNN): <strong>{predictions.model1.category}</strong></p>}
+              {predictions.model2 && <p>• Model 2 (Logistic Regression): <strong>{predictions.model2.category}</strong></p>}
+              {predictions.model3 && <p>• Model 3 (Random Forest): <strong>{predictions.model3.category}</strong></p>}
+              {predictions.model4 && <p>• Model 4 (XGBoost): <strong>{predictions.model4.category}</strong></p>}
+            </div>
           </div>
         )}
       </div>
