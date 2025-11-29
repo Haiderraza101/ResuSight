@@ -211,7 +211,7 @@ class HybridBiLSTM_CNN(nn.Module):
 
 
 # ========================= LOAD RESOURCES =========================
-BASE_PATH = "TempRepo\models"
+BASE_PATH = "models"
 
 @st.cache_resource
 def load_resources_v2():
@@ -339,7 +339,7 @@ class ResumeDataset(Dataset):
 
 @st.cache_resource
 def load_test_data():
-    df = pd.read_csv("TempRepo\models\Final_Categorized.csv")
+    df = pd.read_csv("models\Final_Categorized.csv")
     df["Resume"] = df["Resume"].apply(clean_resume)
     
     # Re-encode labels to ensure consistency
