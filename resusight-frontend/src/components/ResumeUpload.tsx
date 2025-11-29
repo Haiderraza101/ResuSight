@@ -67,9 +67,9 @@ const ResumeUpload: React.FC<ResumeUploadProps> = ({
     setError(null);
 
     try {
-      const response = await ApiService.uploadResume(file, "both");
+      const response = await ApiService.uploadResume(file);
       setUploadResponse(response);
-      onPredictionComplete(response.predictions);
+      onPredictionComplete(response.predictions, response.extractedText);
     } catch (err: any) {
       setError(err.message || "Failed to upload and process resume");
       console.error("Upload error:", err);

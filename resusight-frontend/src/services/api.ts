@@ -1,31 +1,45 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
+export interface TopPrediction {
+  category: string;
+  probability: number;
+}
+
 export interface ModelPrediction {
   prediction: number;
   category: string;
-  confidence: number | null;
-  probabilities?: { [key: string]: number };
+  confidence: number;
+  top5: TopPrediction[];
 }
 
-export interface PredictionResult {
-  model1?: ModelPrediction;
-  model2?: ModelPrediction;
+// Response structure now has keys as model names instead of model1, model2 etc
+export interface AllModelsPredictions {
+  'Logistic Regression'?: ModelPrediction;
+  'Linear SVM'?: ModelPrediction;
+  'Random Forest'?: ModelPrediction;
+  'BiLSTM+Attention'?: ModelPrediction;
+  'BiLSTM+CNN'?: ModelPrediction;
+  'BiLSTM+CNN+Attention'?: ModelPrediction;
+  'DistilBERT Transformer'?: ModelPrediction;
 }
 
 export interface UploadResponse {
   success: boolean;
   filename: string;
-  fileSize: number;
   extractedTextLength: number;
-  predictions: PredictionResult;
+  extractedText?: string;
+  predictions: AllModelsPredictions;
   error?: string;
 }
 
 export interface PredictResponse {
   success: boolean;
-  predictions: PredictionResult;
+  predictions: AllModelsPredictions;
   error?: string;
 }
+
+// Type alias for prediction results (can be from upload or text prediction)
+export type PredictionResult = AllModelsPredictions;
 
 export interface Category {
   id: number;
@@ -46,18 +60,13 @@ class ApiService {
   }
 
   /**
-   * Upload a resume file and get predictions
+   * Upload a resume file and get predictions from all 7 models
    * @param file - The resume file (PDF or TXT)
-   * @param model - Which model(s) to use: 'clf1', 'clf2', or 'both' (default: 'both')
-   * @returns Upload response with predictions
+   * @returns Upload response with predictions from all models
    */
-  async uploadResume(
-    file: File,
-    model: 'clf1' | 'clf2' | 'both' = 'both'
-  ): Promise<UploadResponse> {
+  async uploadResume(file: File): Promise<UploadResponse> {
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('model', model);
 
     try {
       const response = await fetch(`${this.baseURL}/api/resume/upload`, {
@@ -80,22 +89,18 @@ class ApiService {
   }
 
   /**
-   * Get predictions from raw text
+   * Get predictions from raw text using all 7 models
    * @param text - Resume text
-   * @param model - Which model(s) to use: 'clf1', 'clf2', or 'both' (default: 'both')
-   * @returns Prediction response
+   * @returns Prediction response with all model outputs
    */
-  async predictFromText(
-    text: string,
-    model: 'clf1' | 'clf2' | 'both' = 'both'
-  ): Promise<PredictResponse> {
+  async predictFromText(text: string): Promise<PredictResponse> {
     try {
       const response = await fetch(`${this.baseURL}/api/resume/predict`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ text, model }),
+        body: JSON.stringify({ text }),
       });
 
       const data = await response.json();

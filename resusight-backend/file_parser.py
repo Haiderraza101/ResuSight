@@ -51,7 +51,6 @@ def extract_text_from_txt(file: FileStorage) -> str:
         return text
     
     except UnicodeDecodeError:
-        # Try different encoding
         try:
             file.seek(0)
             content = file.read()
