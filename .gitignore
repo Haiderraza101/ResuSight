@@ -39,6 +39,7 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+package-lock.json
 lerna-debug.log*
 .pnpm-debug.log*
 
@@ -63,6 +64,8 @@ lerna-debug.log*
 *.pb
 *.onnx
 *.tflite
+
+# Data files
 *.weights
 
 # Data files (CSV, JSON except config files)
@@ -92,6 +95,13 @@ desktop.ini
 .env
 .env.local
 .env.*.local
+
+# Model outputs and results
+models/results/
+models/best_transformer_out/
+models/transformer_model/
+*.history.json
+history_*.json
 .envrc
 
 # Model outputs and results directories
@@ -108,6 +118,7 @@ transformer_history.json
 *.tmp
 *.temp
 .cache/
+
 *.cache
 
 # Windows specific
