@@ -295,19 +295,15 @@ class ResumeDataset(Dataset):
 def load_test_data():
     df = pd.read_csv("models\Final_Categorized.csv")
     df["Resume"] = df["Resume"].apply(clean_resume)
-    
-    # Re-encode labels to ensure consistency
     df["label"] = le.transform(df["Category"])
     
     X = df["Resume"].values
     y = df["label"].values
     
-    # Replicate split
     x_train_text_full, x_test_text, y_train_full, y_test = train_test_split(
         X, y, test_size=0.2, stratify=y, random_state=42
     )
-    
-    # Convert text to seq for DL models
+ 
     x_test_seq = np.array([
         [word2idx.get(w, 1) for w in t.split()][:MAX_LEN] + [0]*max(0, MAX_LEN-len(t.split())) 
         for t in x_test_text
@@ -316,17 +312,10 @@ def load_test_data():
     
     test_dataset = ResumeDataset(x_test_seq, y_test)
     test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
-    
-    # Convert text to TF-IDF for ML models
+
     x_test_tfidf = tfidf.transform(x_test_text)
     
     return test_loader, x_test_tfidf, y_test, x_test_text
-
-# ========================= MODEL DEFINITIONS =========================
-# (DL models code unchanged - omitted here for brevity in the document but present in the actual app file)
-# ... (keep your existing BiLSTM/CNN classes and model loading code) - already present above in original file
-
-# ========================= TRANSFORMER PREDICT / EVAL HELPERS =========================
 
 def transformer_predict(text, tokenizer, model):
     if tokenizer is None or model is None:
@@ -343,36 +332,19 @@ def transformer_predict(text, tokenizer, model):
         probs = F.softmax(outputs.logits, dim=1).cpu().numpy()[0]
     return probs
 
-
-
-# ========================= LOAD DL MODELS =========================
-# (loading DL models same as your original app - ensure these lines are present in the file)
 vocab_size_actual = len(word2idx)
 num_classes = len(le.classes_)
-
-# instantiate DL models and load state_dicts (same as original file)
-# ... (omitted here for brevity in canvas)
-
-# ========================= STREAMLIT APP (modified to include transformer) =========================
 st.title("Resume Job Category Prediction")
-
-# ========================= MODEL WRAPPERS FOR EVALUATION =========================
-
-# ---- Machine Learning models dictionary ----
 ml_models = {
     "Logistic Regression": clf1,
     "Linear SVM": clf2,
     "Random Forest": clf3
 }
-
-# ---- Deep Learning models dictionary ----
 dl_models = {
     "BiLSTM+Attention": model1,
     "BiLSTM+CNN": model2,
     "BiLSTM+CNN+Attention": model3
 }
-
-# ---- Metrics calculator ----
 def calculate_metrics(y_true, y_pred, y_prob):
     acc = accuracy_score(y_true, y_pred)
     prec, rec, f1, _ = precision_recall_fscore_support(
@@ -391,8 +363,6 @@ def calculate_metrics(y_true, y_pred, y_prob):
         "Top-5 Accuracy": top5,
         "Confusion Matrix": cm
     }
-
-# ---- Evaluate DL models ----
 def evaluate_dl_model(model, test_loader, y_test):
     model.eval()
     preds = []
@@ -410,16 +380,12 @@ def evaluate_dl_model(model, test_loader, y_test):
 
     return np.array(preds), np.array(probs)
 
-# ---- Evaluate ML models ----
 def evaluate_ml_model(model, X_test, y_test):
     probs = model.predict_proba(X_test)
     preds = np.argmax(probs, axis=1)
     return preds, probs
 
 
-
-
-# --- Sidebar for Navigation ---
 page = st.sidebar.selectbox("Choose a Page", ["Prediction", "Model Evaluation"]) 
 
 if page == "Prediction":
@@ -454,11 +420,6 @@ if page == "Prediction":
             st.subheader("Extracted Text")
             st.text_area("Content", resume_text, height=300)
 
-            #printing cleaned text by using re
-            
-
-    
-    # Default sample if no file
     if not resume_text:
         st.info("Using sample resume for demonstration.")
         resume_text = """Skills * Programming Languages: Python (pandas, numpy, scipy, scikit-learn, matplotlib), R, Sql, Spark, Scala. 
@@ -474,15 +435,10 @@ if page == "Prediction":
         st.subheader("Cleaned Text")
         st.text_area("Cleaned Content", cleaned_text, height=200)
         
-        # Prepare inputs
-        # DL Input
         seq = text_to_seq(cleaned_text)
-        # ML Input
         tfidf_vec = tfidf.transform([cleaned_text])
         
         st.subheader("Predictions")
-        
-        # --- DL Models ---
         st.markdown("### Deep Learning Models")
         cols = st.columns(len(dl_models))
         for i, (name, model) in enumerate(dl_models.items()):
@@ -500,8 +456,6 @@ if page == "Prediction":
                     top5_probs = probs[top5_idx]
                     for l, p in zip(top5_labels, top5_probs):
                         st.write(f"{l}: {p:.4f}")
-
-        # --- ML Models ---
         st.markdown("### Machine Learning Models")
         cols_ml = st.columns(len(ml_models))
         for i, (name, model) in enumerate(ml_models.items()):
@@ -517,8 +471,6 @@ if page == "Prediction":
                     top5_probs = probs[top5_idx]
                     for l, p in zip(top5_labels, top5_probs):
                         st.write(f"{l}: {p:.4f}")
-
-        # --- Transformer Model ---
         if tokenizer_trans is not None and transformer_model is not None:
             st.markdown("### Transformer Model")
             probs_t = transformer_predict(cleaned_text, tokenizer_trans, transformer_model)
@@ -537,11 +489,9 @@ if page == "Prediction":
 
 elif page == "Model Evaluation":
     st.header("Model Evaluation on Test Set")
-    
-    # Path to cached evaluation results
+
     eval_cache_path = f"{BASE_PATH}/evaluation_results.pkl"
-    
-    # Check if cached results exist
+
     cache_exists = os.path.exists(eval_cache_path)
     
     col1, col2 = st.columns([1, 1])
@@ -553,8 +503,7 @@ elif page == "Model Evaluation":
             if force_rerun:
                 st.session_state['force_rerun'] = True
                 st.rerun()
-    
-    # Load or compute results
+
     results = None
     
     if run_eval or st.session_state.get('force_rerun', False):
@@ -562,20 +511,15 @@ elif page == "Model Evaluation":
             test_loader, x_test_tfidf, y_test, x_test_text = load_test_data()
             
             results = {}
-            
-            # Evaluate DL Models
             st.info("Evaluating Deep Learning Models...")
             for name, model in dl_models.items():
                 y_pred, y_pred_prob = evaluate_dl_model(model, test_loader, y_test)
                 results[name] = calculate_metrics(y_test, y_pred, y_pred_prob)
-                
-            # Evaluate ML Models
             st.info("Evaluating Machine Learning Models...")
             for name, model in ml_models.items():
                 y_pred, y_pred_prob = evaluate_ml_model(model, x_test_tfidf, y_test)
                 results[name] = calculate_metrics(y_test, y_pred, y_pred_prob)
 
-            # Evaluate Transformer Model
             if tokenizer_trans is not None and transformer_model is not None:
                 st.info("Evaluating Transformer Model...")
                 transformer_probs = []
@@ -588,27 +532,22 @@ elif page == "Model Evaluation":
                 transformer_preds = np.array(transformer_preds)
                 results["Transformer (DistilBERT)"] = calculate_metrics(y_test, transformer_preds, transformer_probs)
 
-            # Generate Learning Curves for ML Models
             st.info("Generating Learning Curves for ML Models (this may take a moment)...")
             results['learning_curves'] = {}
             try:
-                # Load full data for learning curves
                 df_full = pd.read_csv("/home/izen-abbas/venv/ResuSight/models/Final_Categorized.csv")
                 df_full["Resume"] = df_full["Resume"].apply(clean_resume)
                 
                 y_full = le.transform(df_full["Category"])
                 X_full = tfidf.transform(df_full["Resume"])
                 
-                # Create a progress bar
                 progress_bar = st.progress(0)
                 total_steps = len(ml_models)
                 step_counter = 0
 
                 for name, model in ml_models.items():
-                    # Update status
                     st.write(f"Generating learning curve for {name}...")
-                    
-                    # Reduced CV to 3 and steps to 4 for speed
+                
                     train_sizes, train_scores, test_scores = learning_curve(
                         model, X_full, y_full, cv=3, n_jobs=-1, 
                         train_sizes=np.linspace(.1, 1.0, 4)
@@ -619,7 +558,6 @@ elif page == "Model Evaluation":
                         'test_scores': test_scores
                     }
                     
-                    # Update progress
                     step_counter += 1
                     progress_bar.progress(step_counter / total_steps)
                 
@@ -628,7 +566,7 @@ elif page == "Model Evaluation":
                 st.error(f"Error generating learning curves: {e}")
                 progress_bar.empty()
 
-            # Save results to cache
+           
             with open(eval_cache_path, 'wb') as f:
                 pickle.dump(results, f)
             
@@ -636,29 +574,22 @@ elif page == "Model Evaluation":
             st.session_state['force_rerun'] = False
             
     elif cache_exists:
-        # Load from cache
+      
         with st.spinner("Loading cached evaluation results..."):
             with open(eval_cache_path, 'rb') as f:
                 results = pickle.load(f)
         st.info("Loaded evaluation results from cache.")
     
-    # Display results if available
+   
     if results is not None:
-        # Separate model results from learning curves
         model_results = {k: v for k, v in results.items() if k != 'learning_curves'}
-
-        # Display Metrics
         st.subheader("Performance Metrics")
         metrics_df = pd.DataFrame({
             name: {k: v for k, v in res.items() if k != "Confusion Matrix"}
             for name, res in model_results.items()
         })
         st.dataframe(metrics_df.style.highlight_max(axis=1))
-        
-        # Display Confusion Matrices
         st.subheader("Confusion Matrices")
-        
-        # Create tabs for models
         tabs = st.tabs(list(model_results.keys()))
         for i, (name, res) in enumerate(model_results.items()):
             with tabs[i]:
@@ -669,8 +600,6 @@ elif page == "Model Evaluation":
                 ax.set_xlabel('Predicted')
                 ax.set_ylabel('True')
                 st.pyplot(fig)
-        
-        # Display Training Graphs for DL Models
         if dl_history:
             st.subheader("Training History - Deep Learning Models")
             for name, h in dl_history.items():
@@ -698,8 +627,6 @@ elif page == "Model Evaluation":
                     ax.legend()
                     ax.grid(True, alpha=0.3)
                     st.pyplot(fig)
-        
-        # Display Training Graphs for Transformer Model
         if transformer_history:
             st.subheader("Training History - Transformer Model")
             for name, h in transformer_history.items():
@@ -731,7 +658,6 @@ elif page == "Model Evaluation":
         if not dl_history and not ml_history and not transformer_history:
             st.info("Note: Training and validation loss graphs are not available. Run the training scripts to generate history files.")
 
-        # Display Learning Curves for ML Models
         if 'learning_curves' in results:
             st.subheader("Learning Curves - Machine Learning Models")
             for name, data in results['learning_curves'].items():
