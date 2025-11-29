@@ -1,0 +1,98 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+backend/flask_api/venv/
+.venv/
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+.pnpm-debug.log*
+
+# IDEs and Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-project
+*.sublime-workspace
+
+# Model files and checkpoints
+*.pkl
+*.pt
+*.pth
+*.h5
+*.safetensors
+*.ckpt
+*.pb
+*.onnx
+*.tflite
+
+# Data files
+*.csv
+*.json
+!package.json
+!tsconfig.json
+!package-lock.json
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb_checkpoints/
+
+# Logs
+*.log
+logs/
+
+# OS files
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Model outputs and results
+models/results/
+models/best_transformer_out/
+models/transformer_model/
+*.history.json
+history_*.json
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
