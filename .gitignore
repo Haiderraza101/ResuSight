@@ -16,6 +16,8 @@ parts/
 sdist/
 var/
 wheels/
+pip-wheel-metadata/
+share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
@@ -29,6 +31,8 @@ env.bak/
 venv.bak/
 backend/flask_api/venv/
 .venv/
+virtualenv/
+.venv
 
 # Node.js
 node_modules/
@@ -36,6 +40,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 package-lock.json
+lerna-debug.log*
 .pnpm-debug.log*
 
 # IDEs and Editors
@@ -47,6 +52,7 @@ package-lock.json
 .DS_Store
 *.sublime-project
 *.sublime-workspace
+*.code-workspace
 
 # Model files and checkpoints
 *.pkl
@@ -60,11 +66,15 @@ package-lock.json
 *.tflite
 
 # Data files
+*.weights
+
+# Data files (CSV, JSON except config files)
 *.csv
 *.json
 !package.json
 !tsconfig.json
 !package-lock.json
+!tsconfig*.json
 
 # Jupyter Notebook
 .ipynb_checkpoints
@@ -73,11 +83,13 @@ package-lock.json
 # Logs
 *.log
 logs/
+*.log.*
 
 # OS files
 Thumbs.db
 .DS_Store
 desktop.ini
+*.lnk
 
 # Environment variables
 .env
@@ -90,9 +102,55 @@ models/best_transformer_out/
 models/transformer_model/
 *.history.json
 history_*.json
+.envrc
+
+# Model outputs and results directories
+models/results/
+models/best_transformer_out/
+models/transformer_model/
+
+# History files
+*.history.json
+history_*.json
+transformer_history.json
 
 # Temporary files
 *.tmp
 *.temp
 .cache/
 
+*.cache
+
+# Windows specific
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Build outputs
+*.exe
+*.out
+*.app
+
+# Coverage reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# pytest
+.pytest_cache/
+
+# Distribution / packaging
+.Python
+*.manifest
+*.spec

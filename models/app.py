@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, learning_curve
 from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import accuracy_score, precision_recall_fscore_support, confusion_matrix, top_k_accuracy_score, classification_report, roc_auc_score
 from torch.utils.data import Dataset, DataLoader
@@ -463,6 +463,8 @@ def evaluate_ml_model(model, X_test, y_test):
     return preds, probs
 
 
+
+
 # --- Sidebar for Navigation ---
 page = st.sidebar.selectbox("Choose a Page", ["Prediction", "Model Evaluation"]) 
 
@@ -632,6 +634,46 @@ elif page == "Model Evaluation":
                 transformer_preds = np.array(transformer_preds)
                 results["Transformer (DistilBERT)"] = calculate_metrics(y_test, transformer_preds, transformer_probs)
 
+            # Generate Learning Curves for ML Models
+            st.info("Generating Learning Curves for ML Models (this may take a moment)...")
+            results['learning_curves'] = {}
+            try:
+                # Load full data for learning curves
+                df_full = pd.read_csv("/home/izen-abbas/venv/LSTMs/Final_Categorized.csv")
+                df_full["Resume"] = df_full["Resume"].apply(clean_resume)
+                
+                y_full = le.transform(df_full["Category"])
+                X_full = tfidf.transform(df_full["Resume"])
+                
+                # Create a progress bar
+                progress_bar = st.progress(0)
+                total_steps = len(ml_models)
+                step_counter = 0
+
+                for name, model in ml_models.items():
+                    # Update status
+                    st.write(f"Generating learning curve for {name}...")
+                    
+                    # Reduced CV to 3 and steps to 4 for speed
+                    train_sizes, train_scores, test_scores = learning_curve(
+                        model, X_full, y_full, cv=3, n_jobs=-1, 
+                        train_sizes=np.linspace(.1, 1.0, 4)
+                    )
+                    results['learning_curves'][name] = {
+                        'train_sizes': train_sizes,
+                        'train_scores': train_scores,
+                        'test_scores': test_scores
+                    }
+                    
+                    # Update progress
+                    step_counter += 1
+                    progress_bar.progress(step_counter / total_steps)
+                
+                progress_bar.empty()
+            except Exception as e:
+                st.error(f"Error generating learning curves: {e}")
+                progress_bar.empty()
+
             # Save results to cache
             with open(eval_cache_path, 'wb') as f:
                 pickle.dump(results, f)
@@ -648,11 +690,14 @@ elif page == "Model Evaluation":
     
     # Display results if available
     if results is not None:
+        # Separate model results from learning curves
+        model_results = {k: v for k, v in results.items() if k != 'learning_curves'}
+
         # Display Metrics
         st.subheader("Performance Metrics")
         metrics_df = pd.DataFrame({
             name: {k: v for k, v in res.items() if k != "Confusion Matrix"}
-            for name, res in results.items()
+            for name, res in model_results.items()
         })
         st.dataframe(metrics_df.style.highlight_max(axis=1))
         
@@ -660,8 +705,8 @@ elif page == "Model Evaluation":
         st.subheader("Confusion Matrices")
         
         # Create tabs for models
-        tabs = st.tabs(list(results.keys()))
-        for i, (name, res) in enumerate(results.items()):
+        tabs = st.tabs(list(model_results.keys()))
+        for i, (name, res) in enumerate(model_results.items()):
             with tabs[i]:
                 st.write(f"**{name}**")
                 cm = res["Confusion Matrix"]
@@ -731,3 +776,35 @@ elif page == "Model Evaluation":
         
         if not dl_history and not ml_history and not transformer_history:
             st.info("Note: Training and validation loss graphs are not available. Run the training scripts to generate history files.")
+
+        # Display Learning Curves for ML Models
+        if 'learning_curves' in results:
+            st.subheader("Learning Curves - Machine Learning Models")
+            for name, data in results['learning_curves'].items():
+                st.markdown(f"**{name}**")
+                
+                train_sizes = data['train_sizes']
+                train_scores = data['train_scores']
+                test_scores = data['test_scores']
+                
+                fig, ax = plt.subplots(figsize=(10, 5))
+                ax.set_title(f"Learning Curve ({name})")
+                ax.set_ylim(0.7, 1.01)
+                ax.set_xlabel("Training examples")
+                ax.set_ylabel("Score")
+                ax.grid()
+                
+                train_scores_mean = np.mean(train_scores, axis=1)
+                train_scores_std = np.std(train_scores, axis=1)
+                test_scores_mean = np.mean(test_scores, axis=1)
+                test_scores_std = np.std(test_scores, axis=1)
+                
+                ax.fill_between(train_sizes, train_scores_mean - train_scores_std,
+                                 train_scores_mean + train_scores_std, alpha=0.1, color="r")
+                ax.fill_between(train_sizes, test_scores_mean - test_scores_std,
+                                 test_scores_mean + test_scores_std, alpha=0.1, color="g")
+                ax.plot(train_sizes, train_scores_mean, 'o-', color="r", label="Training score")
+                ax.plot(train_sizes, test_scores_mean, 'o-', color="g", label="Cross-validation score")
+                ax.legend(loc="best")
+                
+                st.pyplot(fig)
