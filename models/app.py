@@ -19,8 +19,6 @@ import json
 from PyPDF2 import PdfReader
 from transformers import DistilBertTokenizerFast, DistilBertForSequenceClassification
 
-# ========================= MODEL ARCHITECTURES =========================
-
 class Attention(nn.Module):
     def __init__(self, hidden_dim, attn_dropout=0.3):
         super(Attention, self).__init__()
@@ -85,24 +83,19 @@ class HybridBiLSTM_CNN_NoAttention(nn.Module):
         fc_dropout=0.5
     ):
         super().__init__()
-        # Embedding
         self.embedding = nn.Embedding(vocab_size, embed_dim, padding_idx=padding_idx)
         self.embed_dropout = nn.Dropout(embed_dropout)
-        # BiLSTM
         self.lstm = nn.LSTM(
             embed_dim, hidden_dim, num_layers=lstm_layers, batch_first=True,
             dropout=0.3, bidirectional=True
         )
-        # CNN Blocks with multiple kernel sizes
         self.convs = nn.ModuleList([
             nn.Conv1d(in_channels=hidden_dim * 2, out_channels=cnn_filters, kernel_size=k)
             for k in kernel_sizes
         ])
-        # Output dims
-        lstm_vec_dim = hidden_dim * 2  # last hidden state
+        lstm_vec_dim = hidden_dim * 2 
         cnn_vec_dim = cnn_filters * len(kernel_sizes)
         fusion_dim = lstm_vec_dim + cnn_vec_dim
-        # Fully Connected Layers
         self.fc1 = nn.Linear(fusion_dim, 256)
         self.dropout = nn.Dropout(fc_dropout)
         self.fc2 = nn.Linear(256, num_classes)
@@ -111,20 +104,15 @@ class HybridBiLSTM_CNN_NoAttention(nn.Module):
     def forward(self, x):
         emb = self.embedding(x)
         emb = self.embed_dropout(emb)
-        # LSTM
         lstm_out, (h_n, _) = self.lstm(emb)
-        # Take final hidden state of both directions
-        lstm_vec = torch.cat((h_n[-2], h_n[-1]), dim=1)  # (batch, hidden_dim*2)
-        # CNN
-        cnn_input = lstm_out.permute(0, 2, 1)  # (batch, channels, seq_len)
+        lstm_vec = torch.cat((h_n[-2], h_n[-1]), dim=1) 
+        cnn_input = lstm_out.permute(0, 2, 1) 
         cnn_feats = [
             torch.max(F.relu(conv(cnn_input)), dim=2)[0]
             for conv in self.convs
         ]
-        cnn_vec = torch.cat(cnn_feats, dim=1)  # (batch, filters*num_kernels)
-        # Concatenate LSTM + CNN
+        cnn_vec = torch.cat(cnn_feats, dim=1)
         fused = torch.cat([lstm_vec, cnn_vec], dim=1)
-        # Classification
         x = self.relu(self.fc1(fused))
         x = self.dropout(x)
         x = self.fc2(x)
@@ -158,59 +146,43 @@ class HybridBiLSTM_CNN(nn.Module):
         fc_dropout=0.5
     ):
         super().__init__()
-        # Embedding
         self.embedding = nn.Embedding(vocab_size, embed_dim, padding_idx=padding_idx)
         self.embed_dropout = nn.Dropout(embed_dropout)
-        # BiLSTM
         self.lstm = nn.LSTM(
             embed_dim, hidden_dim, num_layers=lstm_layers, dropout=0.3,
             batch_first=True, bidirectional=True
         )
-        # Attention (uses separate class to match state_dict keys: attention.attn.weight)
         self.attention = AttentionModel3(hidden_dim)
-        
-        # CNN Blocks with multiple kernel sizes
+
         self.convs = nn.ModuleList([
             nn.Conv1d(in_channels=hidden_dim * 2, out_channels=cnn_filters, kernel_size=k)
             for k in kernel_sizes
         ])
-        # Output dims
         lstm_vec_dim = hidden_dim * 2
         cnn_vec_dim = cnn_filters * len(kernel_sizes)
         fusion_dim = lstm_vec_dim + cnn_vec_dim
-        # Fully Connected Layers
         self.fc1 = nn.Linear(fusion_dim, 256)
         self.dropout = nn.Dropout(fc_dropout)
         self.fc2 = nn.Linear(256, num_classes)
         self.relu = nn.ReLU()
 
     def forward(self, x):
-        # Embedding
         emb = self.embedding(x)
         emb = self.embed_dropout(emb)
-        # LSTM
-        lstm_out, _ = self.lstm(emb)  # (batch, seq_len, hidden*2)
-        
-        # Attention
-        lstm_vec = self.attention(lstm_out)  # (batch, hidden*2)
-        
-        # CNN
-        cnn_input = lstm_out.permute(0, 2, 1)  # (batch, channels, seq_len)
+        lstm_out, _ = self.lstm(emb) 
+        lstm_vec = self.attention(lstm_out) 
+        cnn_input = lstm_out.permute(0, 2, 1)
         cnn_feats = [
             torch.max(F.relu(conv(cnn_input)), dim=2)[0]
             for conv in self.convs
         ]
-        cnn_vec = torch.cat(cnn_feats, dim=1)  # (batch, filters*num_kernels)
-        # Fusion: LSTM + CNN
+        cnn_vec = torch.cat(cnn_feats, dim=1)
         fused = torch.cat([lstm_vec, cnn_vec], dim=1)
-        # Fully Connected
         x = self.relu(self.fc1(fused))
         x = self.dropout(x)
         x = self.fc2(x)
         return x
 
-
-# ========================= LOAD RESOURCES =========================
 BASE_PATH = "models"
 
 @st.cache_resource
@@ -220,40 +192,29 @@ def load_resources_v2():
     le = pickle.load(open(f"{BASE_PATH}/le.pkl", "rb"))
     tfidf = pickle.load(open(f"{BASE_PATH}/tfidf.pkl", "rb"))
     
-    # Model hyperparameters (must match training scripts)
     vocab_size = len(word2idx)
     num_classes = len(le.classes_)
     embed_dim = 128
     hidden_dim = 128
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
-    # Load DL Models (3 BiLSTM models from .pt files)
-    # Model 1: BiLSTM + Attention
     model1 = BiLSTMClassifier(vocab_size=vocab_size, embed_dim=embed_dim, hidden_dim=hidden_dim, num_classes=num_classes)
     model1.load_state_dict(torch.load(f"{BASE_PATH}/BiLSTM+Attention.pt", map_location=device))
     model1 = model1.to(device)
     model1.eval()
-    
-    # Model 2: BiLSTM + CNN (No Attention)
     model2 = HybridBiLSTM_CNN_NoAttention(vocab_size=vocab_size, embed_dim=embed_dim, hidden_dim=hidden_dim, num_classes=num_classes)
     model2.load_state_dict(torch.load(f"{BASE_PATH}/BiLSTM+CNN.pt", map_location=device))
     model2 = model2.to(device)
     model2.eval()
-    
-    # Model 3: BiLSTM + CNN + Attention (Hybrid)
     model3 = HybridBiLSTM_CNN(vocab_size=vocab_size, embed_dim=embed_dim, hidden_dim=hidden_dim, num_classes=num_classes)
     model3.load_state_dict(torch.load(f"{BASE_PATH}/BiLSTM+CNN+Attention.pt", map_location=device))
     model3 = model3.to(device)
     model3.eval()
 
-    # Load ML Models (3 sklearn models from .pkl files)
     clf1 = pickle.load(open(f"{BASE_PATH}/clf1.pkl", "rb"))
     clf2 = pickle.load(open(f"{BASE_PATH}/clf2.pkl", "rb"))
     clf3 = pickle.load(open(f"{BASE_PATH}/clf3_rf.pkl", "rb"))
 
-    
-    
-    # Load History (DL Models)
     dl_history = {}
     try:
         dl_history["BiLSTM+Attention"] = json.load(open(f"{BASE_PATH}/history_model1.json", "r"))
@@ -262,17 +223,13 @@ def load_resources_v2():
     except FileNotFoundError:
         pass
     
-    # Load History (ML Models) - No history for ML models
     ml_history = {}
     
-    # Load History (Transformer Model)
     transformer_history = {}
     try:
         transformer_history["Transformer (DistilBERT)"] = json.load(open(f"{BASE_PATH}/transformer_model/transformer_history.json", "r"))
     except FileNotFoundError:
         pass
-
-    # Load transformer tokenizer + model if available
     transformer_tokenizer = None
     transformer_model = None
     transformer_path = os.path.join(BASE_PATH, "transformer_model")
@@ -281,7 +238,6 @@ def load_resources_v2():
         transformer_model = DistilBertForSequenceClassification.from_pretrained(transformer_path).to(torch.device("cuda" if torch.cuda.is_available() else "cpu"))
         transformer_model.eval()
     except Exception as e:
-        # ignore if transformer not present
         transformer_tokenizer = None
         transformer_model = None
 
@@ -296,7 +252,6 @@ MAX_LEN = 500
 EMBED_DIM = 128
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# ========================= CLEANER =========================
 def clean_resume(text):
     if not text:
         return ""
@@ -327,7 +282,6 @@ def text_to_seq(text):
         seq = seq[:MAX_LEN]
     return torch.tensor([seq], dtype=torch.long).to(device)
 
-# ========================= DATASET & DATALOADER =========================
 class ResumeDataset(Dataset):
     def __init__(self, X, y):
         self.X = torch.tensor(X, dtype=torch.long)
