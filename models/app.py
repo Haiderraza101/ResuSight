@@ -211,7 +211,7 @@ class HybridBiLSTM_CNN(nn.Module):
 
 
 # ========================= LOAD RESOURCES =========================
-BASE_PATH = "/home/izen-abbas/venv/ResuSight/NLP_Project"
+BASE_PATH = "TempRepo\models"
 
 @st.cache_resource
 def load_resources_v2():
@@ -339,7 +339,7 @@ class ResumeDataset(Dataset):
 
 @st.cache_resource
 def load_test_data():
-    df = pd.read_csv("/home/izen-abbas/venv/LSTMs/Final_Categorized.csv")
+    df = pd.read_csv("TempRepo\models\Final_Categorized.csv")
     df["Resume"] = df["Resume"].apply(clean_resume)
     
     # Re-encode labels to ensure consistency
@@ -639,7 +639,7 @@ elif page == "Model Evaluation":
             results['learning_curves'] = {}
             try:
                 # Load full data for learning curves
-                df_full = pd.read_csv("/home/izen-abbas/venv/LSTMs/Final_Categorized.csv")
+                df_full = pd.read_csv("/home/izen-abbas/venv/ResuSight/models/Final_Categorized.csv")
                 df_full["Resume"] = df_full["Resume"].apply(clean_resume)
                 
                 y_full = le.transform(df_full["Category"])
