@@ -73,7 +73,7 @@ const ModelResults: React.FC<ModelResultsProps> = ({
             </div>
 
             <div className="space-y-4">
-              <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg p-4">
+              <div className="bg-linear-to-r from-blue-50 to-blue-100 rounded-lg p-4">
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium text-gray-700">
                     Predicted Category
@@ -94,7 +94,7 @@ const ModelResults: React.FC<ModelResultsProps> = ({
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
                     <div
-                      className="bg-gradient-to-r from-blue-500 to-blue-600 h-full rounded-full transition-all duration-500"
+                      className="bg-linear-to-r from-blue-500 to-blue-600 h-full rounded-full transition-all duration-500"
                       style={{
                         width: `${predictions.model1.confidence * 100}%`,
                       }}
@@ -157,7 +157,7 @@ const ModelResults: React.FC<ModelResultsProps> = ({
             </div>
 
             <div className="space-y-4">
-              <div className="bg-gradient-to-r from-purple-50 to-purple-100 rounded-lg p-4">
+              <div className="bg-linear-to-r from-purple-50 to-purple-100 rounded-lg p-4">
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium text-gray-700">
                     Predicted Category
@@ -178,7 +178,7 @@ const ModelResults: React.FC<ModelResultsProps> = ({
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
                     <div
-                      className="bg-gradient-to-r from-purple-500 to-pink-500 h-full rounded-full transition-all duration-500"
+                      className="bg-linear-to-r from-purple-500 to-pink-500 h-full rounded-full transition-all duration-500"
                       style={{
                         width: `${predictions.model2.confidence * 100}%`,
                       }}
@@ -224,7 +224,7 @@ const ModelResults: React.FC<ModelResultsProps> = ({
 
         {/* Comparison Card */}
         {predictions.model1 && predictions.model2 && (
-          <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-lg shadow-lg p-6 border border-indigo-200">
+          <div className="bg-linear-to-br from-indigo-50 to-purple-50 rounded-lg shadow-lg p-6 border border-indigo-200">
             <h4 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
               <svg
                 className="w-5 h-5 text-indigo-600"

@@ -67,8 +67,8 @@ const TrustedBySection: React.FC = () => {
             recruitment processes with the power of ResuSight. Experience
             AI-powered parsing and unlock a new era of recruitment efficiency.
           </p>
-          <button className="px-8 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors duration-200 shadow-lg">
-            Get a free trial
+          <button className="px-8 py-4 bg-blue-600 text-white rounded-lg font-semibold shadow-lg hover:bg-blue-700 transition-colors duration-200">
+            Get Started Now
           </button>
         </div>
       </div>
