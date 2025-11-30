@@ -1,16 +1,4 @@
-#!/usr/bin/env python3
-"""
-transformer_train_for_app.py
 
-Improved transformer training script that saves a HuggingFace-compatible
-DistilBERT sequence-classification model into the Streamlit app folder.
-
-By default it will save to:
-  /home/izen-abbas/venv/ResuSight/NLP_Project/transformer_model
-
-So your app.py (which calls DistilBertForSequenceClassification.from_pretrained(transformer_path))
-will be able to load the model directly.
-"""
 import os
 import argparse
 import random
@@ -37,7 +25,6 @@ from transformers import (
 from torch.optim import AdamW
 from tqdm import tqdm
 
-# -------------------------- DEFAULT CONFIG --------------------------
 DEFAULT_BACKBONE = "distilbert-base-uncased"
 DEFAULT_MAX_LEN = 512
 DEFAULT_BATCH = 16
@@ -46,10 +33,8 @@ DEFAULT_EPOCHS = 6
 WEIGHT_DECAY = 1e-2
 WARMUP_PROPORTION = 0.06
 SEED = 42
-# Path your app expects by default:
-DEFAULT_APP_MODEL_DIR = "/home/izen-abbas/venv/ResuSight/NLP_Project/transformer_model"
+DEFAULT_APP_MODEL_DIR = "models\transformer_model"
 
-# -------------------------- UTIL --------------------------
 def seed_everything(seed):
     random.seed(seed)
     np.random.seed(seed)
@@ -81,7 +66,6 @@ def clean_resume(text):
         s = s.replace(k, v)
     return s.lower().strip()
 
-# -------------------------- DATASET --------------------------
 class ResumeDataset(Dataset):
     def __init__(self, texts, labels, tokenizer, max_len=DEFAULT_MAX_LEN):
         self.texts = texts
@@ -105,10 +89,8 @@ class ResumeDataset(Dataset):
         return enc
 
 def collate_fn(batch, tokenizer):
-    # tokenizer.pad will convert list[dict] -> batched tensors
     return tokenizer.pad(batch, padding="longest", return_tensors="pt")
 
-# -------------------------- TRAIN / EVAL HELPERS --------------------------
 def train_epoch(model, dataloader, optimizer, scheduler, device, scaler, epoch, class_weights_tensor=None, grad_clip=1.0):
     model.train()
     total_loss = 0.0
@@ -124,7 +106,7 @@ def train_epoch(model, dataloader, optimizer, scheduler, device, scaler, epoch, 
         optimizer.zero_grad()
         with torch.cuda.amp.autocast(enabled=(scaler is not None)):
             outputs = model(input_ids=input_ids, attention_mask=attention_mask, labels=None)
-            logits = outputs.logits  # (B, num_labels)
+            logits = outputs.logits 
             if class_weights_tensor is not None:
                 loss_fct = nn.CrossEntropyLoss(weight=class_weights_tensor.to(device))
                 loss = loss_fct(logits, labels)
@@ -184,30 +166,25 @@ def eval_model(model, dataloader, device):
     report = classification_report(labels_all, preds_all, digits=4)
     return avg_loss, acc, f1, report
 
-# -------------------------- MAIN --------------------------
 def main(args):
     seed_everything(args.seed)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    # Load CSV
     df = pd.read_csv(args.data)
     assert "Resume" in df.columns and "Category" in df.columns, "CSV must have Resume and Category columns"
 
     df["Resume"] = df["Resume"].apply(clean_resume).fillna("").astype(str)
 
-    # Label encode
     le = LabelEncoder()
     df["label"] = le.fit_transform(df["Category"].astype(str))
     num_labels = len(le.classes_)
     print(f"Classes: {num_labels}")
 
-    # Tokenizer & model (HuggingFace classification model)
     tokenizer = AutoTokenizer.from_pretrained(args.backbone, use_fast=True)
     config = AutoConfig.from_pretrained(args.backbone, num_labels=num_labels)
     model = AutoModelForSequenceClassification.from_pretrained(args.backbone, config=config)
     model.to(device)
 
-    # Splits
     X = df["Resume"].tolist()
     y = df["label"].values
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=args.test_size, stratify=y, random_state=args.seed)
@@ -217,12 +194,10 @@ def main(args):
     val_ds = ResumeDataset(X_val, y_val, tokenizer, max_len=args.max_len)
     test_ds = ResumeDataset(X_test, y_test, tokenizer, max_len=args.max_len)
 
-    # Class weights
     class_weights_np = compute_class_weight(class_weight="balanced", classes=np.arange(num_labels), y=y_train)
     class_weights = torch.tensor(class_weights_np, dtype=torch.float32)
     print("Class weights:", class_weights_np.tolist())
 
-    # Sampler (optional)
     if args.use_sampler:
         class_counts = Counter(y_train)
         samples_weight = np.array([1.0 / class_counts[lbl] for lbl in y_train])
@@ -234,7 +209,6 @@ def main(args):
     val_loader = DataLoader(val_ds, batch_size=args.batch_size, shuffle=False, collate_fn=lambda b: collate_fn(b, tokenizer))
     test_loader = DataLoader(test_ds, batch_size=args.batch_size, shuffle=False, collate_fn=lambda b: collate_fn(b, tokenizer))
 
-    # Optimizer & scheduler
     no_decay = ["bias", "LayerNorm.weight"]
     optimizer_grouped_parameters = [
         {"params": [p for n, p in model.named_parameters() if not any(nd in n for nd in no_decay)], "weight_decay": WEIGHT_DECAY},
@@ -248,7 +222,6 @@ def main(args):
 
     scaler = torch.cuda.amp.GradScaler() if args.use_amp and device.type == "cuda" else None
 
-    # Training loop
     history = {"train_loss": [], "val_loss": [], "train_acc": [], "val_acc": [], "train_f1": [], "val_f1": []}
     best_val_loss = float('inf')
     best_epoch = -1
@@ -263,7 +236,7 @@ def main(args):
 
         print(f"Epoch {epoch+1}/{args.epochs} | Train loss {train_loss:.4f} acc {train_acc:.4f} f1 {train_f1:.4f} | Val loss {val_loss:.4f} acc {val_acc:.4f} f1 {val_f1:.4f}")
 
-        # Save best (full checkpoint + HF-friendly saved model)
+     
         if val_loss < best_val_loss:
             best_val_loss = val_loss
             best_epoch = epoch
@@ -277,15 +250,13 @@ def main(args):
             ckpt_path = os.path.join(args.output_dir, "best_checkpoint.pth")
             torch.save(ckpt, ckpt_path)
 
-            # Save HF-compatible model and tokenizer to output dir (so app can load via from_pretrained)
             os.makedirs(args.output_dir, exist_ok=True)
             tokenizer.save_pretrained(args.output_dir)
-            # save model using HF API
+           
             model.save_pretrained(args.output_dir)
-            # also save state_dict separately
+          
             torch.save(model.state_dict(), os.path.join(args.output_dir, "model_state_dict.pt"))
 
-            # label classes for app decoding
             with open(os.path.join(args.output_dir, "label_classes.json"), "w") as f:
                 json.dump(list(le.classes_), f)
 
@@ -293,7 +264,7 @@ def main(args):
 
     print(f"Training complete. Best epoch {best_epoch+1} val_loss {best_val_loss:.4f}")
 
-    # Final evaluation on test set (load best if available)
+
     print("Evaluating on test set...")
     if os.path.exists(os.path.join(args.output_dir, "best_checkpoint.pth")):
         ckpt = torch.load(os.path.join(args.output_dir, "best_checkpoint.pth"), map_location=device)
@@ -302,13 +273,11 @@ def main(args):
     print(f"Test loss {test_loss:.4f} acc {test_acc:.4f} f1 {test_f1:.4f}")
     print("Classification Report (test):\n", test_report)
 
-    # Save history and label_classes
     with open(os.path.join(args.output_dir, "transformer_history.json"), "w") as f:
         json.dump(history, f, indent=2)
     with open(os.path.join(args.output_dir, "label_classes.json"), "w") as f:
         json.dump(list(le.classes_), f)
 
-# -------------------------- ARGPARSE --------------------------
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Transformer Resume Classifier (save HF-compatible model for app)")
     parser.add_argument("--data", type=str, required=True, help="Path to Final_Categorized.csv")
@@ -324,7 +293,7 @@ if __name__ == "__main__":
     parser.add_argument("--grad_clip", type=float, default=1.0)
     parser.add_argument("--warmup_proportion", type=float, default=WARMUP_PROPORTION)
     parser.add_argument("--seed", type=int, default=SEED)
-    # default output dir points to the app path so the app can load the saved model directly
+   
     parser.add_argument("--output_dir", type=str, default=DEFAULT_APP_MODEL_DIR, help="Where to save tokenizer & HF model (app will load from here)")
     args = parser.parse_args()
 

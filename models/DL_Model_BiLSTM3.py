@@ -1,4 +1,3 @@
-# ========================= IMPORTS =========================
 import pandas as pd
 import numpy as np
 import re
@@ -14,7 +13,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
 
-# ========================= CLEANER =========================
 def clean_resume(text):
     if pd.isna(text):
         return ""
@@ -36,8 +34,7 @@ def clean_resume(text):
         s = s.replace(k, v)
     return s.lower().strip()
 
-# ========================= LOAD DATA =========================
-df = pd.read_csv("/home/izen-abbas/venv/LSTMs/Final_Categorized.csv")
+df = pd.read_csv("models\Final_Categorized.csv")
 df["Resume"] = df["Resume"].apply(clean_resume)
 
 le = LabelEncoder()
@@ -47,7 +44,6 @@ num_classes = len(le.classes_)
 X = df["Resume"].values
 y = df["label"].values
 
-# Split: train / test (final) and within train create train/val for early stopping
 x_train_text_full, x_test_text, y_train_full, y_test = train_test_split(
     X, y, test_size=0.2, stratify=y, random_state=42
 )
@@ -55,9 +51,8 @@ x_train_text, x_val_text, y_train, y_val = train_test_split(
     x_train_text_full, y_train_full, test_size=0.1, stratify=y_train_full, random_state=42
 )
 
-# ========================= TOKENIZATION / VOCAB =========================
-VOCAB_SIZE = 15000   # reduced vocab to improve generalization
-MAX_LEN = 500        # reduced sequence length
+VOCAB_SIZE = 15000 
+MAX_LEN = 500  
 EMBED_DIM = 128
 
 def build_vocab(texts, vocab_size=VOCAB_SIZE):
@@ -71,7 +66,6 @@ def build_vocab(texts, vocab_size=VOCAB_SIZE):
     return word2idx
 
 word2idx = build_vocab(x_train_text, vocab_size=VOCAB_SIZE)
-# idx2word maps index -> word
 idx2word = {idx: word for word, idx in word2idx.items()}
 
 def text_to_seq(text, word2idx, max_len=MAX_LEN):
@@ -86,11 +80,10 @@ x_train = np.array([text_to_seq(t, word2idx) for t in x_train_text])
 x_val = np.array([text_to_seq(t, word2idx) for t in x_val_text])
 x_test = np.array([text_to_seq(t, word2idx) for t in x_test_text])
 
-# ========================= CLASS WEIGHTS (on train set) =========================
 class_weights = compute_class_weight(class_weight="balanced", classes=np.unique(y_train), y=y_train)
 class_weights = torch.tensor(class_weights, dtype=torch.float32)
 
-# ========================= DATASET =========================
+
 class ResumeDataset(Dataset):
     def __init__(self, X, y):
         self.X = torch.tensor(X, dtype=torch.long)
@@ -109,7 +102,7 @@ train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True, dr
 val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False)
 test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
 
-# ========================= HYBRID MODEL (BiLSTM + CNN + Attention) =========================
+
 class Attention(nn.Module):
     def __init__(self, hidden_dim):
         super().__init__()
@@ -138,11 +131,9 @@ class HybridBiLSTM_CNN(nn.Module):
     ):
         super().__init__()
 
-        # -------- Embedding --------
         self.embedding = nn.Embedding(vocab_size, embed_dim, padding_idx=padding_idx)
         self.embed_dropout = nn.Dropout(embed_dropout)
 
-        # -------- BiLSTM --------
         self.lstm = nn.LSTM(
             embed_dim,
             hidden_dim,
@@ -152,10 +143,8 @@ class HybridBiLSTM_CNN(nn.Module):
             bidirectional=True
         )
 
-        # -------- Attention (optional but recommended) --------
         self.attention = Attention(hidden_dim)
 
-        # -------- CNN Blocks --------
         self.convs = nn.ModuleList([
             nn.Conv1d(
                 in_channels=hidden_dim * 2,    
@@ -165,13 +154,11 @@ class HybridBiLSTM_CNN(nn.Module):
             for k in kernel_sizes
         ])
 
-        # Output dims
-        lstm_vec_dim = hidden_dim * 2     # from attention
+        lstm_vec_dim = hidden_dim * 2  
         cnn_vec_dim = cnn_filters * len(kernel_sizes)
 
         fusion_dim = lstm_vec_dim + cnn_vec_dim
 
-        # -------- Fully Connected Layers --------
         self.fc1 = nn.Linear(fusion_dim, 256)
         self.dropout = nn.Dropout(fc_dropout)
 
@@ -179,18 +166,11 @@ class HybridBiLSTM_CNN(nn.Module):
         self.relu = nn.ReLU()
 
     def forward(self, x):
-        # x: (batch, seq_len)
         emb = self.embedding(x)
         emb = self.embed_dropout(emb)
+        lstm_out, _ = self.lstm(emb)  
 
-        # -------- LSTM --------
-        lstm_out, _ = self.lstm(emb)   # (batch, seq_len, hidden*2)
-
-        # -------- Attention --------
-        lstm_vec = self.attention(lstm_out)  # (batch, hidden*2)
-
-        # -------- CNN --------
-        # reshape: CNN expects (batch, channels, seq_len)
+        lstm_vec = self.attention(lstm_out) 
         cnn_input = lstm_out.permute(0, 2, 1)
 
         cnn_feats = [
@@ -198,19 +178,15 @@ class HybridBiLSTM_CNN(nn.Module):
             for conv in self.convs
         ]
 
-        cnn_vec = torch.cat(cnn_feats, dim=1)  # (batch, filters*num_kernels)
-
-        # -------- Fusion: LSTM + CNN --------
+        cnn_vec = torch.cat(cnn_feats, dim=1) 
         fused = torch.cat([lstm_vec, cnn_vec], dim=1)
 
-        # -------- Fully Connected --------
         x = self.relu(self.fc1(fused))
         x = self.dropout(x)
         x = self.fc2(x)
         return x
 
 
-# Use actual vocab size (len(word2idx))
 vocab_size_actual = len(word2idx)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -219,30 +195,26 @@ model = HybridBiLSTM_CNN(
     embed_dim=EMBED_DIM,
     hidden_dim=128,
     num_classes=num_classes,
-    cnn_filters=128,            # you can tune
-    kernel_sizes=(2,3,4),       # best for resume classification
+    cnn_filters=128,        
+    kernel_sizes=(2,3,4), 
 )
 model = model.to(device)
 
 
 criterion = nn.CrossEntropyLoss(weight=class_weights.to(device))
 
-# ========================= OPTIMIZER / SCHEDULER =========================
-optimizer = torch.optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-5)  # L2 regularization
+optimizer = torch.optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-5)  
 scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
     optimizer,
     mode='min',
     factor=0.5,
     patience=2
 )
-
-# ========================= TRAINING LOOP (with gradient clipping & early stopping) =========================
 EPOCHS = 20
 best_val_loss = float('inf')
 patience = 5
 counter = 0
 
-# Record training history
 history = {'train_loss': [], 'val_loss': [], 'train_acc': [], 'val_acc': []}
 
 for epoch in range(EPOCHS):
@@ -258,7 +230,6 @@ for epoch in range(EPOCHS):
         loss = criterion(out, yb)
         loss.backward()
 
-        # gradient clipping
         torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
 
         optimizer.step()
@@ -268,7 +239,7 @@ for epoch in range(EPOCHS):
         all_train_preds.append(preds)
         all_train_labels.append(yb.cpu().numpy())
 
-    # Validation
+  
     model.eval()
     val_loss = 0.0
     all_preds = []
@@ -282,11 +253,9 @@ for epoch in range(EPOCHS):
             all_preds.append(out.softmax(dim=1).cpu().numpy())
             all_labels.append(yb.cpu().numpy())
 
-    # normalize losses by number of batches
     val_loss /= max(1, len(val_loader))
     train_loss_epoch = train_loss / max(1, len(train_loader))
 
-    # compute accuracies
     if all_train_labels:
         y_train_pred = np.concatenate([np.argmax(p, axis=1) for p in all_train_preds])
         y_train_true = np.concatenate(all_train_labels)
@@ -305,10 +274,8 @@ for epoch in range(EPOCHS):
     history['train_acc'].append(train_acc)
     history['val_acc'].append(val_acc)
 
-    # scheduler step (ReduceLROnPlateau uses validation loss)
     scheduler.step(val_loss)
 
-    # Early stopping / save best
     if val_loss < best_val_loss:
         best_val_loss = val_loss
         torch.save(model.state_dict(), "BiLSTM+CNN+Attention.pt")
@@ -319,10 +286,8 @@ for epoch in range(EPOCHS):
             print("Early stopping triggered")
             break
 
-# ========================= LOAD BEST MODEL =========================
 model.load_state_dict(torch.load("BiLSTM+CNN+Attention.pt", map_location=device))
 
-# ========================= EVALUATION ON TEST SET =========================
 model.eval()
 all_preds = []
 all_labels = []
@@ -353,7 +318,6 @@ print(f"Top-5 Accuracy: {top5:.4f}")
 print("\nConfusion Matrix:\n", cm)
 print("\nClassification Report:\n", classification_report(y_test_flat, y_pred))
 
-# ========================= SAMPLE PREDICTION (WITH TOP-5 OUTPUT) =========================
 sample_resume = """Skills * Programming Languages: Python (pandas, numpy, scipy, scikit-learn, matplotlib), R, Sql, Spark, Scala. 
 Machine learning: Deep Learning, CNN, RNN, Transformers, Regression, SVM, Random Forest, Ensemble Methods, NLP, Time Series.
 Databases: MySQL, MongoDB, PowerBI, AWS, GCP.
@@ -365,14 +329,12 @@ sample_seq = torch.tensor([text_to_seq(sample_clean, word2idx)], dtype=torch.lon
 
 model.eval()
 with torch.no_grad():
-    pred = model(sample_seq).softmax(dim=1).cpu().numpy()[0]  # shape: (num_classes,)
-
-# Top-1
+    pred = model(sample_seq).softmax(dim=1).cpu().numpy()[0]
 top1_idx = np.argmax(pred)
 top1_label = le.inverse_transform([top1_idx])[0]
 
-# Top-5
-top5_idx = pred.argsort()[-5:][::-1]   # highest → lowest
+
+top5_idx = pred.argsort()[-5:][::-1] 
 top5_labels = le.inverse_transform(top5_idx)
 top5_probs = pred[top5_idx]
 
@@ -383,12 +345,10 @@ print("\nTop-5 Predictions:")
 for label, prob in zip(top5_labels, top5_probs):
     print(f"{label}: {prob:.4f}")
 
-# ========================= SAVE TOKENIZER & LABEL ENCODER =========================
 pickle.dump(word2idx, open("word2idx.pkl", "wb"))
 pickle.dump(idx2word, open("idx2word.pkl", "wb"))
 pickle.dump(le, open("le.pkl", "wb"))
 
-# ========================= SAVE HISTORY =========================
 import json
 with open("history_model3.json", "w") as f:
     json.dump(history, f)
