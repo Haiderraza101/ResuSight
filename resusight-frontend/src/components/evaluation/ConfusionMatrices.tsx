@@ -1,97 +1,138 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from "react";
 
 interface ConfusionMatricesProps {
-  matrices: Record<string, number[][]>;
-  labels: string[];
+  matrices: Record<string, number[][]> | null | undefined;
+  labels: string[] | null | undefined;
 }
 
-const ConfusionMatrices: React.FC<ConfusionMatricesProps> = ({ matrices, labels }) => {
-  const [selectedModel, setSelectedModel] = useState<string>(Object.keys(matrices)[0]);
+const ConfusionMatrices: React.FC<ConfusionMatricesProps> = ({
+  matrices,
+  labels,
+}) => {
+  // Debug: Raw props
+  console.log("🔍 ConfusionMatrices Props:", {
+    matrices,
+    labels,
+  });
 
-  if (!matrices || Object.keys(matrices).length === 0) {
-    return <div className="text-slate-400">No confusion matrices available</div>;
+  // ---------------------------
+  // Guard: Handle missing data
+  // ---------------------------
+  if (
+    !matrices ||
+    Object.keys(matrices).length === 0 ||
+    !labels ||
+    labels.length === 0
+  ) {
+    console.warn("⚠️ ConfusionMatrices: Missing matrices or labels.");
+    return (
+      <div className="text-gray-400 text-sm border p-4 rounded-xl bg-gray-50">
+        No confusion matrices available.
+      </div>
+    );
   }
 
-  const matrix = matrices[selectedModel];
-  const maxValue = Math.max(...matrix.flat());
+  // Extract model names safely
+  const modelKeys = Object.keys(matrices ?? {});
+  console.log("📌 Model Keys:", modelKeys);
 
-  // Helper to get color intensity
+  const [selectedModel, setSelectedModel] = useState<string>(
+    modelKeys[0] ?? ""
+  );
+
+  // Log when selected model changes
+  useEffect(() => {
+    console.log("🔄 Selected Model changed:", selectedModel);
+  }, [selectedModel]);
+
+  const matrix = matrices[selectedModel];
+
+  // ---------------------------
+  // Ensure matrix exists
+  // ---------------------------
+  if (!matrix) {
+    console.error("❌ No matrix found for model:", selectedModel);
+    return (
+      <div className="text-gray-400 text-sm border p-4 rounded-xl bg-gray-50">
+        Selected model has no matrix available.
+      </div>
+    );
+  }
+
+  console.log(`📊 Matrix for ${selectedModel}:`, matrix);
+
   const getColor = (value: number) => {
-    if (value === 0) return 'bg-slate-900';
-    const intensity = Math.min(Math.ceil((value / maxValue) * 900), 900);
-    // Map to tailwind blue shades roughly
-    if (intensity < 100) return 'bg-blue-950 text-slate-400';
-    if (intensity < 300) return 'bg-blue-900 text-slate-200';
-    if (intensity < 500) return 'bg-blue-800 text-white';
-    if (intensity < 700) return 'bg-blue-700 text-white';
-    return 'bg-blue-600 text-white font-bold';
+    const intensity = Math.min(255 - value * 20, 255);
+    return `rgb(${intensity}, ${255}, ${intensity})`;
   };
 
   return (
-    <div className="space-y-6">
-      {/* Model Selector */}
-      <div className="flex flex-wrap gap-2">
-        {Object.keys(matrices).map((model) => (
-          <button
-            key={model}
-            onClick={() => setSelectedModel(model)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-              selectedModel === model
-                ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/20'
-                : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white'
-            }`}
-          >
-            {model}
-          </button>
-        ))}
+    <div className="p-6 bg-white shadow rounded-xl border">
+      {/* Title */}
+      <h2 className="text-xl font-semibold mb-4 text-gray-800">
+        Confusion Matrix
+      </h2>
+
+      {/* Model Selection */}
+      <div className="mb-4">
+        <label className="mr-2 font-medium text-gray-700">Select Model:</label>
+        <select
+          value={selectedModel}
+          onChange={(e) => {
+            console.log("🟦 User selected model:", e.target.value);
+            setSelectedModel(e.target.value);
+          }}
+          className="border px-3 py-1 rounded-md shadow-sm text-gray-700 bg-white"
+        >
+          {modelKeys.map((model) => (
+            <option key={model} value={model}>
+              {model}
+            </option>
+          ))}
+        </select>
       </div>
 
-      {/* Matrix Visualization */}
+      {/* Confusion Matrix Grid */}
       <div className="overflow-x-auto">
-        <div className="inline-block min-w-full align-middle">
-          <div className="border border-slate-700 rounded-lg overflow-hidden">
-            <div 
-              className="grid gap-px bg-slate-700"
-              style={{ 
-                gridTemplateColumns: `auto repeat(${labels.length}, minmax(40px, 1fr))` 
-              }}
-            >
-              {/* Header Row */}
-              <div className="bg-slate-800 p-2 text-xs font-bold text-slate-400 text-center sticky left-0 z-10">
-                True \ Pred
-              </div>
-              {labels.map((label, i) => (
-                <div key={`h-${i}`} className="bg-slate-800 p-2 text-xs text-slate-400 text-center truncate" title={label}>
-                  {label.substring(0, 3)}
-                </div>
+        <table className="border-collapse">
+          <thead>
+            <tr>
+              <th></th>
+              {labels.map((label) => (
+                <th
+                  key={label}
+                  className="px-3 py-2 border text-sm font-semibold text-gray-700"
+                >
+                  {label}
+                </th>
               ))}
+            </tr>
+          </thead>
 
-              {/* Data Rows */}
-              {matrix.map((row, i) => (
-                <React.Fragment key={`row-${i}`}>
-                  {/* Row Label */}
-                  <div className="bg-slate-800 p-2 text-xs text-slate-400 font-medium truncate sticky left-0 z-10" title={labels[i]}>
+          <tbody>
+            {matrix.map((row, i) => {
+              console.log(`🧩 Row ${i}`, row);
+              return (
+                <tr key={i}>
+                  <th className="px-3 py-2 border text-sm font-medium text-gray-700">
                     {labels[i]}
-                  </div>
-                  {/* Cells */}
-                  {row.map((value, j) => (
-                    <div
-                      key={`cell-${i}-${j}`}
-                      className={`${getColor(value)} p-2 text-xs text-center flex items-center justify-center transition-colors hover:ring-1 hover:ring-cyan-400 hover:z-20`}
-                      title={`True: ${labels[i]}, Pred: ${labels[j]}, Count: ${value}`}
+                  </th>
+
+                  {row.map((cell, j) => (
+                    <td
+                      key={j}
+                      className="border text-center text-sm w-16 h-12"
+                      style={{ backgroundColor: getColor(cell) }}
                     >
-                      {value > 0 ? value : ''}
-                    </div>
+                      {cell}
+                    </td>
                   ))}
-                </React.Fragment>
-              ))}
-            </div>
-          </div>
-        </div>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
-      <p className="text-xs text-slate-500 text-center mt-2">
-        Hover over cells to see details. Darker blue indicates higher values.
-      </p>
     </div>
   );
 };

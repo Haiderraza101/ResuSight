@@ -2,11 +2,11 @@ import React, { useState, useRef } from "react";
 import ApiService, { UploadResponse, PredictionResult } from "../services/api";
 
 interface ResumeUploadProps {
-  onPredictionComplete: (results: PredictionResult, text?: string) => void;
+  onPredictionsReceived: (results: PredictionResult, text?: string) => void;
 }
 
 const ResumeUpload: React.FC<ResumeUploadProps> = ({
-  onPredictionComplete,
+  onPredictionsReceived,
 }) => {
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -93,8 +93,8 @@ const ResumeUpload: React.FC<ResumeUploadProps> = ({
       setScanningPhase("complete");
 
       await new Promise((resolve) => setTimeout(resolve, 600));
-      console.log("Calling onPredictionComplete with:", response.predictions);
-      onPredictionComplete(response.predictions, response.extractedText);
+      console.log("Calling onPredictionsReceived with:", response.predictions);
+      onPredictionsReceived(response.predictions, response.extractedText);
     } catch (err: any) {
       setError(err.message || "Failed to upload and process resume");
       console.error("Upload error:", err);
