@@ -26,7 +26,7 @@ const ConfusionMatrices: React.FC<ConfusionMatricesProps> = ({
   ) {
     console.warn("⚠️ ConfusionMatrices: Missing matrices or labels.");
     return (
-      <div className="text-gray-400 text-sm border p-4 rounded-xl bg-gray-50">
+      <div className="text-gray-400 text-sm p-4 rounded-xl ">
         No confusion matrices available.
       </div>
     );
@@ -53,7 +53,7 @@ const ConfusionMatrices: React.FC<ConfusionMatricesProps> = ({
   if (!matrix) {
     console.error("❌ No matrix found for model:", selectedModel);
     return (
-      <div className="text-gray-400 text-sm border p-4 rounded-xl bg-gray-50">
+      <div className="text-gray-400 text-sm border p-4 rounded-xl ">
         Selected model has no matrix available.
       </div>
     );
@@ -67,7 +67,7 @@ const ConfusionMatrices: React.FC<ConfusionMatricesProps> = ({
   };
 
   return (
-    <div className="p-6 bg-white shadow rounded-xl border">
+    <div className="p-6 shadow rounded-xl border">
       {/* Title */}
       <h2 className="text-xl font-semibold mb-4 text-gray-800">
         Confusion Matrix
@@ -82,7 +82,7 @@ const ConfusionMatrices: React.FC<ConfusionMatricesProps> = ({
             console.log("🟦 User selected model:", e.target.value);
             setSelectedModel(e.target.value);
           }}
-          className="border px-3 py-1 rounded-md shadow-sm text-gray-700 bg-white"
+          className="border px-3 py-1 rounded-md shadow-sm text-gray-700 "
         >
           {modelKeys.map((model) => (
             <option key={model} value={model}>

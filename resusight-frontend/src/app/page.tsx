@@ -33,7 +33,7 @@ export default function Home() {
       <section className="py-12 lg:py-20 bg-slate-950">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Upload Section */}
-          <div className="max-w-4xl mx-auto">
+          <div className="max-w-7xl mx-auto">
             {/* Changed prop name from onPredictionComplete to onPredictionsReceived */}
             <ResumeUpload onPredictionsReceived={handlePredictionsReceived} />
           </div>
@@ -48,7 +48,7 @@ export default function Home() {
               predictions={predictions}
               extractedText={extractedText}
             />
-            
+
             {/* Evaluation Button - Shown only after results */}
             <div className="flex justify-center mt-16">
               <Link
