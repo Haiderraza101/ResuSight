@@ -1,93 +1,77 @@
 import React from "react";
 
 const Footer: React.FC = () => {
+  const currentYear = new Date().getFullYear();
+
   return (
-    <footer className="bg-gray-900 text-gray-400">
-      <div className="max-w-5xl mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+    <footer className="relative bg-slate-950 border-t border-slate-700/50">
+      <div className="absolute inset-0 bg-gradient-to-t from-cyan-500/5 to-transparent pointer-events-none"></div>
+
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
           <div>
-            <h4 className="text-white font-bold text-lg mb-4">Products</h4>
+            <h3 className="text-2xl font-black text-white mb-4">
+              Resume
+              <span className="bg-gradient-to-r from-cyan-400 to-blue-400 text-transparent bg-clip-text ml-2">
+                Sight
+              </span>
+            </h3>
+            <p className="text-slate-400 text-sm leading-relaxed mb-4">
+              Transform resumes into actionable intelligence with
+              enterprise-grade AI analysis.
+            </p>
+            <div className="space-y-2">
+              <p className="text-xs text-slate-500">✓ 7 Ensemble AI Models</p>
+              <p className="text-xs text-slate-500">✓ 26 Job Categories</p>
+              <p className="text-xs text-slate-500">✓ Sub-Second Analysis</p>
+            </div>
+          </div>
+
+          <div>
+            <h4 className="text-white font-semibold mb-4">Product</h4>
             <ul className="space-y-2">
               <li>
                 <a
                   href="#"
-                  className="text-gray-400 hover:text-white transition-colors duration-200"
+                  className="text-slate-400 hover:text-cyan-400 text-sm transition-colors"
                 >
-                  Parser
+                  Features
                 </a>
               </li>
               <li>
                 <a
                   href="#"
-                  className="text-gray-400 hover:text-white transition-colors duration-200"
+                  className="text-slate-400 hover:text-cyan-400 text-sm transition-colors"
                 >
-                  Source & Match
+                  Pricing
                 </a>
               </li>
               <li>
                 <a
                   href="#"
-                  className="text-gray-400 hover:text-white transition-colors duration-200"
+                  className="text-slate-400 hover:text-cyan-400 text-sm transition-colors"
                 >
-                  Skills Intelligence
+                  Documentation
                 </a>
               </li>
               <li>
                 <a
                   href="#"
-                  className="text-gray-400 hover:text-white transition-colors duration-200"
+                  className="text-slate-400 hover:text-cyan-400 text-sm transition-colors"
                 >
-                  Analytics
+                  API Reference
                 </a>
               </li>
             </ul>
           </div>
 
           <div>
-            <h4 className="text-white font-bold text-lg mb-4">Solutions</h4>
+            <h4 className="text-white font-semibold mb-4">Company</h4>
             <ul className="space-y-2">
               <li>
                 <a
                   href="#"
-                  className="text-gray-400 hover:text-white transition-colors duration-200"
-                >
-                  HR Software Vendors
-                </a>
-              </li>
-              <li>
-                <a
-                  href="#"
-                  className="text-gray-400 hover:text-white transition-colors duration-200"
-                >
-                  Corporate HR
-                </a>
-              </li>
-              <li>
-                <a
-                  href="#"
-                  className="text-gray-400 hover:text-white transition-colors duration-200"
-                >
-                  Job Boards
-                </a>
-              </li>
-              <li>
-                <a
-                  href="#"
-                  className="text-gray-400 hover:text-white transition-colors duration-200"
-                >
-                  Government & Analysts
-                </a>
-              </li>
-            </ul>
-          </div>
-
-          <div>
-            <h4 className="text-white font-bold text-lg mb-4">Company</h4>
-            <ul className="space-y-2">
-              <li>
-                <a
-                  href="#"
-                  className="text-gray-400 hover:text-white transition-colors duration-200"
+                  className="text-slate-400 hover:text-cyan-400 text-sm transition-colors"
                 >
                   About
                 </a>
@@ -95,7 +79,15 @@ const Footer: React.FC = () => {
               <li>
                 <a
                   href="#"
-                  className="text-gray-400 hover:text-white transition-colors duration-200"
+                  className="text-slate-400 hover:text-cyan-400 text-sm transition-colors"
+                >
+                  Blog
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  className="text-slate-400 hover:text-cyan-400 text-sm transition-colors"
                 >
                   Careers
                 </a>
@@ -103,88 +95,97 @@ const Footer: React.FC = () => {
               <li>
                 <a
                   href="#"
-                  className="text-gray-400 hover:text-white transition-colors duration-200"
-                >
-                  Press
-                </a>
-              </li>
-              <li>
-                <a
-                  href="#"
-                  className="text-gray-400 hover:text-white transition-colors duration-200"
-                >
-                  Blog
-                </a>
-              </li>
-            </ul>
-          </div>
-
-          <div>
-            <h4 className="text-white font-bold text-lg mb-4">Legal</h4>
-            <ul className="space-y-2">
-              <li>
-                <a
-                  href="#"
-                  className="text-gray-400 hover:text-white transition-colors duration-200"
-                >
-                  Privacy
-                </a>
-              </li>
-              <li>
-                <a
-                  href="#"
-                  className="text-gray-400 hover:text-white transition-colors duration-200"
-                >
-                  Terms
-                </a>
-              </li>
-              <li>
-                <a
-                  href="#"
-                  className="text-gray-400 hover:text-white transition-colors duration-200"
-                >
-                  Cookies
-                </a>
-              </li>
-              <li>
-                <a
-                  href="#"
-                  className="text-gray-400 hover:text-white transition-colors duration-200"
+                  className="text-slate-400 hover:text-cyan-400 text-sm transition-colors"
                 >
                   Contact
                 </a>
               </li>
             </ul>
           </div>
+
+          <div>
+            <h4 className="text-white font-semibold mb-4">Legal</h4>
+            <ul className="space-y-2">
+              <li>
+                <a
+                  href="#"
+                  className="text-slate-400 hover:text-cyan-400 text-sm transition-colors"
+                >
+                  Privacy Policy
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  className="text-slate-400 hover:text-cyan-400 text-sm transition-colors"
+                >
+                  Terms of Service
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  className="text-slate-400 hover:text-cyan-400 text-sm transition-colors"
+                >
+                  Security
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  className="text-slate-400 hover:text-cyan-400 text-sm transition-colors"
+                >
+                  Cookies
+                </a>
+              </li>
+            </ul>
+          </div>
         </div>
 
-        <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center">
-          <div className="text-gray-500 mb-4 md:mb-0">
-            <p>&copy; 2025 ResuSight. All rights reserved.</p>
-          </div>
-          <div className="flex gap-6">
+        <div className="h-px bg-gradient-to-r from-transparent via-slate-600 to-transparent mb-8"></div>
+
+        <div className="flex flex-col md:flex-row items-center justify-between">
+          <p className="text-slate-500 text-sm">
+            © {currentYear} ResuSight. All rights reserved. Powered by AI.
+          </p>
+
+          <div className="flex items-center gap-4 mt-6 md:mt-0">
             <a
               href="#"
-              className="text-gray-400 hover:text-white transition-colors duration-200"
+              className="w-10 h-10 rounded-lg bg-slate-800/50 border border-slate-700/50 flex items-center justify-center hover:border-cyan-500/50 hover:bg-slate-800 transition-all duration-300"
             >
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M8.29 20v-7.21h-2.3V9.25h2.3V7.31c0-2.29 1.48-3.54 3.47-3.54 1.04 0 1.93.08 2.19.11v2.54h-1.5c-1.2 0-1.48.57-1.48 1.4v1.83h2.95l-1.46 3.54h-1.49V20H8.29z" />
+              <svg
+                className="w-5 h-5 text-slate-400"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path d="M8.29 20v-7.21H5.33V9.25h2.96V7.02c0-2.92 1.77-4.53 4.41-4.53 1.25 0 2.33.09 2.63.13v3.05h-1.81c-1.41 0-1.69.67-1.69 1.66v2.17h3.39l-.44 3.54h-2.95V20" />
               </svg>
             </a>
+
             <a
               href="#"
-              className="text-gray-400 hover:text-white transition-colors duration-200"
+              className="w-10 h-10 rounded-lg bg-slate-800/50 border border-slate-700/50 flex items-center justify-center hover:border-cyan-500/50 hover:bg-slate-800 transition-all duration-300"
             >
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M23 3a10.9 10.9 0 11-3.14 1.53 4.48 4.48 0 00.33-2.04c0-.78-.08-1.45-.23-2.02C23.957.5 24 1.5 24 3z" />
+              <svg
+                className="w-5 h-5 text-slate-400"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2s9 5 20 5a9.5 9.5 0 00-9-5.5c4.75 2.25 7-7 7-7" />
               </svg>
             </a>
+
             <a
               href="#"
-              className="text-gray-400 hover:text-white transition-colors duration-200"
+              className="w-10 h-10 rounded-lg bg-slate-800/50 border border-slate-700/50 flex items-center justify-center hover:border-cyan-500/50 hover:bg-slate-800 transition-all duration-300"
             >
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 0c6.627 0 12 5.373 12 12s-5.373 12-12 12S0 18.627 0 12 5.373 0 12 0zM8.75 9a1.5 1.5 0 100 3 1.5 1.5 0 000-3zm6.5 0a1.5 1.5 0 100 3 1.5 1.5 0 000-3z" />
+              <svg
+                className="w-5 h-5 text-slate-400"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
               </svg>
             </a>
           </div>
