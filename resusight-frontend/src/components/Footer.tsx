@@ -11,7 +11,7 @@ const Footer: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
           <div>
             <h3 className="text-2xl font-black text-white mb-4">
-              Resume
+              Resu
               <span className="bg-gradient-to-r from-cyan-400 to-blue-400 text-transparent bg-clip-text ml-2">
                 Sight
               </span>

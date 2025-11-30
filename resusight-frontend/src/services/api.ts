@@ -1,4 +1,6 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+// Default to port 5001 which is used by the Flask backend in `resusight-backend/app.py`.
+// You can override this by setting `NEXT_PUBLIC_API_URL` in `.env.local`.
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
 
 export interface TopPrediction {
   category: string;
@@ -74,17 +76,22 @@ class ApiService {
         body: formData,
       });
 
-      const data = await response.json();
+      // If server returns non-JSON (error page or connection refused) this will throw and be caught below
+      let data: any = null;
+      try {
+        data = await response.json();
+      } catch (jsonErr) {
+        throw new Error(`Server returned ${response.status} ${response.statusText}`);
+      }
 
       if (!response.ok) {
-        throw new Error(data?.error || 'Failed to upload resume');
+        throw new Error(data?.error || `Failed to upload resume (${response.status})`);
       }
 
       return data;
     } catch (error: any) {
-      throw new Error(
-        error.message || 'Network error while uploading resume'
-      );
+      // Preserve original message for better debugging in UI
+      throw new Error(error?.message || 'Network error while uploading resume');
     }
   }
 
