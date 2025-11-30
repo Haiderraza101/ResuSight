@@ -96,6 +96,42 @@ def get_categories():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/api/models/metrics', methods=['GET'])
+def get_model_metrics():
+    """Get performance metrics for all models"""
+    try:
+        metrics = model_loader.get_evaluation_metrics()
+        return jsonify({"success": True, "metrics": metrics}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/models/confusion-matrices', methods=['GET'])
+def get_confusion_matrices():
+    """Get confusion matrices for all models"""
+    try:
+        matrices = model_loader.get_confusion_matrices()
+        return jsonify({"success": True, "confusionMatrices": matrices}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/models/training-history', methods=['GET'])
+def get_training_history():
+    """Get training history for DL and Transformer models"""
+    try:
+        history = model_loader.get_training_history()
+        return jsonify({"success": True, "trainingHistory": history}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/models/learning-curves', methods=['GET'])
+def get_learning_curves():
+    """Get learning curves for ML models"""
+    try:
+        curves = model_loader.get_learning_curves()
+        return jsonify({"success": True, "learningCurves": curves}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.errorhandler(404)
 def handle_404(e):
     return jsonify({"error": "Endpoint not found"}), 404

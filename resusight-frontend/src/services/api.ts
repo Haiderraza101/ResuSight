@@ -159,7 +159,95 @@ class ApiService {
       throw new Error('API is not available');
     }
   }
+  /**
+   * Get performance metrics for all models
+   * @returns Performance metrics including accuracy, precision, recall, F1, top-3, top-5
+   */
+  async getModelMetrics(): Promise<any> {
+    try {
+      const response = await fetch(`${this.baseURL}/api/models/metrics`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.error || 'Failed to fetch metrics');
+      }
+
+      return data.metrics;
+    } catch (error: any) {
+      throw new Error(error.message || 'Network error while fetching metrics');
+    }
+  }
+
+  /**
+   * Get confusion matrices for all models
+   * @returns Confusion matrices and category labels
+   */
+  async getConfusionMatrices(): Promise<any> {
+    try {
+      const response = await fetch(`${this.baseURL}/api/models/confusion-matrices`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.error || 'Failed to fetch confusion matrices');
+      }
+
+      return data;
+    } catch (error: any) {
+      throw new Error(error.message || 'Network error while fetching confusion matrices');
+    }
+  }
+
+  /**
+   * Get training history for DL and Transformer models
+   * @returns Training history with loss and accuracy curves
+   */
+  async getTrainingHistory(): Promise<any> {
+    try {
+      const response = await fetch(`${this.baseURL}/api/models/training-history`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.error || 'Failed to fetch training history');
+      }
+
+      return data.trainingHistory;
+    } catch (error: any) {
+      throw new Error(error.message || 'Network error while fetching training history');
+    }
+  }
+
+  /**
+   * Get learning curves for ML models
+   * @returns Learning curves data
+   */
+  async getLearningCurves(): Promise<any> {
+    try {
+      const response = await fetch(`${this.baseURL}/api/models/learning-curves`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.error || 'Failed to fetch learning curves');
+      }
+
+      return data.learningCurves;
+    } catch (error: any) {
+      throw new Error(error.message || 'Network error while fetching learning curves');
+    }
+  }
 }
 
-export default new ApiService();
+const apiService = new ApiService();
+export default apiService;
+
+// Export convenience functions
+export const {
+  uploadResume,
+  predictFromText,
+  getCategories,
+  health,
+  getModelMetrics,
+  getConfusionMatrices,
+  getTrainingHistory,
+  getLearningCurves,
+} = apiService;
 

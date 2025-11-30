@@ -420,3 +420,54 @@ class ModelLoader:
         
         return results
 
+    def get_evaluation_metrics(self):
+        """Load and return cached evaluation metrics"""
+        import json
+        metrics_path = os.path.join(self.models_dir, 'evaluation_metrics.json')
+        if os.path.exists(metrics_path):
+            with open(metrics_path, 'r') as f:
+                return json.load(f)
+        return {"error": "Evaluation metrics not found. Please run evaluation first."}
+    
+    def get_confusion_matrices(self):
+        """Load and return confusion matrices"""
+        import json
+        cm_path = os.path.join(self.models_dir, 'confusion_matrices.json')
+        if os.path.exists(cm_path):
+            with open(cm_path, 'r') as f:
+                data = json.load(f)
+                # Include category labels
+                data['labels'] = self.le.classes_.tolist()
+                return data
+        return {"error": "Confusion matrices not found. Please run evaluation first."}
+    
+    def get_training_history(self):
+        """Load and return training history for DL and Transformer models"""
+        import json
+        history = {}
+        
+        # DL Models
+        dl_models = ['BiLSTM+Attention', 'BiLSTM+CNN', 'BiLSTM+CNN+Attention']
+        for i, model_name in enumerate(dl_models, 1):
+            history_path = os.path.join(self.models_dir, f'history_model{i}.json')
+            if os.path.exists(history_path):
+                with open(history_path, 'r') as f:
+                    history[model_name] = json.load(f)
+        
+        # Transformer
+        transformer_history_path = os.path.join(self.models_dir, 'transformer_model', 'transformer_history.json')
+        if os.path.exists(transformer_history_path):
+            with open(transformer_history_path, 'r') as f:
+                history['DistilBERT Transformer'] = json.load(f)
+        
+        return history
+    
+    def get_learning_curves(self):
+        """Load and return learning curves for ML models"""
+        import json
+        curves_path = os.path.join(self.models_dir, 'learning_curves.json')
+        if os.path.exists(curves_path):
+            with open(curves_path, 'r') as f:
+                return json.load(f)
+        return {"error": "Learning curves not found. Please run evaluation first."}
+
