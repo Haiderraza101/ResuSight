@@ -72,20 +72,21 @@ class HybridBiLSTM_CNN_NoAttention(torch.nn.Module):
             torch.nn.Conv1d(in_channels=hidden_dim * 2, out_channels=cnn_filters, kernel_size=k)
             for k in kernel_sizes
         ])
-        self.fc1 = torch.nn.Linear(cnn_filters * len(kernel_sizes), 128)
+        self.fc1 = torch.nn.Linear(cnn_filters * len(kernel_sizes) + hidden_dim * 2, 256)
         self.dropout = torch.nn.Dropout(fc_dropout)
-        self.fc2 = torch.nn.Linear(128, num_classes)
+        self.fc2 = torch.nn.Linear(256, num_classes)
         self.relu = torch.nn.ReLU()
 
     def forward(self, x):
         emb = self.embedding(x)
         emb = self.embed_dropout(emb)
         lstm_out, _ = self.lstm(emb)
-        lstm_vec = lstm_out
-        cnn_input = lstm_vec.permute(0, 2, 1)
+        lstm_vec = torch.mean(lstm_out, dim=1)
+        cnn_input = lstm_out.permute(0, 2, 1)
         cnn_feats = [self.relu(conv(cnn_input)).max(dim=2)[0] for conv in self.convs]
         cnn_vec = torch.cat(cnn_feats, dim=1)
-        x = self.relu(self.fc1(cnn_vec))
+        fused = torch.cat([lstm_vec, cnn_vec], dim=1)
+        x = self.relu(self.fc1(fused))
         x = self.dropout(x)
         x = self.fc2(x)
         return x
@@ -107,9 +108,9 @@ class HybridBiLSTM_CNN(torch.nn.Module):
             torch.nn.Conv1d(in_channels=hidden_dim * 2, out_channels=cnn_filters, kernel_size=k)
             for k in kernel_sizes
         ])
-        self.fc1 = torch.nn.Linear(cnn_filters * len(kernel_sizes) + hidden_dim * 2, 128)
+        self.fc1 = torch.nn.Linear(cnn_filters * len(kernel_sizes) + hidden_dim * 2, 256)
         self.dropout = torch.nn.Dropout(fc_dropout)
-        self.fc2 = torch.nn.Linear(128, num_classes)
+        self.fc2 = torch.nn.Linear(256, num_classes)
         self.relu = torch.nn.ReLU()
 
     def forward(self, x):
