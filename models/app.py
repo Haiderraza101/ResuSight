@@ -182,7 +182,7 @@ class HybridBiLSTM_CNN(nn.Module):
         x = self.fc2(x)
         return x
 
-BASE_PATH = "models\app.py"
+BASE_PATH = "models"
 
 @st.cache_resource
 def load_resources_v2():
