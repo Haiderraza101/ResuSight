@@ -6,8 +6,6 @@ import torch.nn.functional as F
 import numpy as np
 from transformers import DistilBertTokenizerFast, DistilBertForSequenceClassification
 
-# ========================= DEEP LEARNING MODEL ARCHITECTURES =========================
-
 class Attention(torch.nn.Module):
     def __init__(self, hidden_dim, attn_dropout=0.3):
         super(Attention, self).__init__()
@@ -127,8 +125,6 @@ class HybridBiLSTM_CNN(torch.nn.Module):
         x = self.fc2(x)
         return x
 
-# ========================= MODEL LOADER =========================
-
 class ModelLoader:
     def __init__(self, models_dir=None):
         """
@@ -142,21 +138,17 @@ class ModelLoader:
         
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         
-        # ML Models
-        self.clf1 = None  # Logistic Regression
-        self.clf2 = None  # Linear SVM
-        self.clf3_rf = None  # Random Forest
+        self.clf1 = None 
+        self.clf2 = None
+        self.clf3_rf = None 
         
-        # DL Models
-        self.model1 = None  # BiLSTM + Attention
-        self.model2 = None  # BiLSTM + CNN
-        self.model3 = None  # BiLSTM + CNN + Attention
+        self.model1 = None 
+        self.model2 = None 
+        self.model3 = None
         
-        # Transformer
         self.transformer_model = None
         self.transformer_tokenizer = None
-        
-        # Preprocessing
+       
         self.tfidf = None
         self.le = None
         self.word2idx = None
@@ -173,7 +165,6 @@ class ModelLoader:
     def load_models(self):
         """Load all required models and preprocessors"""
         try:
-            # ===== LOAD ML PREPROCESSING =====
             print("Loading ML preprocessing tools...")
             model_path = os.path.join(self.models_dir, 'tfidf.pkl')
             self.tfidf = pickle.load(open(model_path, 'rb'))
@@ -183,7 +174,6 @@ class ModelLoader:
             
             self.num_classes = len(self.le.classes_)
             
-            # ===== LOAD ML MODELS =====
             print("Loading ML models...")
             model_path = os.path.join(self.models_dir, 'clf1.pkl')
             self.clf1 = pickle.load(open(model_path, 'rb'))
@@ -191,7 +181,6 @@ class ModelLoader:
             model_path = os.path.join(self.models_dir, 'clf2.pkl')
             self.clf2 = pickle.load(open(model_path, 'rb'))
             
-            # Try to load clf3_rf (Random Forest)
             try:
                 model_path = os.path.join(self.models_dir, 'clf3_rf.pkl')
                 self.clf3_rf = pickle.load(open(model_path, 'rb'))
@@ -199,7 +188,6 @@ class ModelLoader:
             except FileNotFoundError:
                 print("⚠ clf3_rf (Random Forest) not found - will skip")
             
-            # ===== LOAD DL PREPROCESSING =====
             print("Loading DL preprocessing tools...")
             try:
                 word2idx_path = os.path.join(self.models_dir, 'word2idx.pkl')
@@ -213,11 +201,9 @@ class ModelLoader:
             except FileNotFoundError:
                 print("⚠ DL preprocessing files (word2idx, idx2word) not found")
             
-            # ===== LOAD DL MODELS =====
             if self.word2idx:
                 print("Loading DL models...")
                 try:
-                    # BiLSTM + Attention
                     self.model1 = BiLSTMClassifier(
                         vocab_size=self.vocab_size, embed_dim=self.embed_dim,
                         hidden_dim=self.hidden_dim, num_classes=self.num_classes
@@ -226,12 +212,11 @@ class ModelLoader:
                     self.model1.load_state_dict(torch.load(pt_path, map_location=self.device))
                     self.model1 = self.model1.to(self.device)
                     self.model1.eval()
-                    print("✓ BiLSTM+Attention loaded")
+                    print("BiLSTM+Attention loaded")
                 except Exception as e:
-                    print(f"⚠ BiLSTM+Attention not loaded: {e}")
+                    print(f"BiLSTM+Attention not loaded: {e}")
                 
                 try:
-                    # BiLSTM + CNN
                     self.model2 = HybridBiLSTM_CNN_NoAttention(
                         vocab_size=self.vocab_size, embed_dim=self.embed_dim,
                         hidden_dim=self.hidden_dim, num_classes=self.num_classes
@@ -245,7 +230,6 @@ class ModelLoader:
                     print(f"⚠ BiLSTM+CNN not loaded: {e}")
                 
                 try:
-                    # BiLSTM + CNN + Attention
                     self.model3 = HybridBiLSTM_CNN(
                         vocab_size=self.vocab_size, embed_dim=self.embed_dim,
                         hidden_dim=self.hidden_dim, num_classes=self.num_classes
@@ -254,11 +238,10 @@ class ModelLoader:
                     self.model3.load_state_dict(torch.load(pt_path, map_location=self.device))
                     self.model3 = self.model3.to(self.device)
                     self.model3.eval()
-                    print("✓ BiLSTM+CNN+Attention loaded")
+                    print("BiLSTM+CNN+Attention loaded")
                 except Exception as e:
-                    print(f"⚠ BiLSTM+CNN+Attention not loaded: {e}")
+                    print(f"BiLSTM+CNN+Attention not loaded: {e}")
             
-            # ===== LOAD TRANSFORMER =====
             print("Loading Transformer model...")
             try:
                 transformer_path = os.path.join(self.models_dir, 'transformer_model')
@@ -270,7 +253,7 @@ class ModelLoader:
             except Exception as e:
                 print(f"⚠ Transformer not loaded: {e}")
             
-            print("✅ Model loading complete!")
+            print("Model loading complete!")
         except FileNotFoundError as e:
             raise FileNotFoundError(f"Model file not found: {e}")
         except Exception as e:
@@ -359,7 +342,6 @@ class ModelLoader:
                 'top5': self.get_top_n_predictions(proba, 5)
             }
         
-        # ===== DL MODELS =====
         seq = self.text_to_seq(cleaned_text)
         
         if self.model1 and seq is not None:
@@ -398,7 +380,6 @@ class ModelLoader:
                 'top5': self.get_top_n_predictions(probs, 5)
             }
         
-        # ===== TRANSFORMER =====
         if self.transformer_model and self.transformer_tokenizer:
             try:
                 inputs = self.transformer_tokenizer(
@@ -436,7 +417,6 @@ class ModelLoader:
         if os.path.exists(cm_path):
             with open(cm_path, 'r') as f:
                 data = json.load(f)
-                # Include category labels
                 data['labels'] = self.le.classes_.tolist()
                 return data
         return {"error": "Confusion matrices not found. Please run evaluation first."}
@@ -446,7 +426,6 @@ class ModelLoader:
         import json
         history = {}
         
-        # DL Models
         dl_models = ['BiLSTM+Attention', 'BiLSTM+CNN', 'BiLSTM+CNN+Attention']
         for i, model_name in enumerate(dl_models, 1):
             history_path = os.path.join(self.models_dir, f'history_model{i}.json')
@@ -454,7 +433,6 @@ class ModelLoader:
                 with open(history_path, 'r') as f:
                     history[model_name] = json.load(f)
         
-        # Transformer
         transformer_history_path = os.path.join(self.models_dir, 'transformer_model', 'transformer_history.json')
         if os.path.exists(transformer_history_path):
             with open(transformer_history_path, 'r') as f:

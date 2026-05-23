@@ -17,3 +17,7 @@ threadpoolctl>=3.0.0
 
 # File processing
 PyPDF2>=3.0.0
+
+# Deep Learning packages
+torch>=2.0.0
+transformers>=4.30.0

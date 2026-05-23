@@ -119,7 +119,7 @@ def get_training_history():
     """Get training history for DL and Transformer models"""
     try:
         history = model_loader.get_training_history()
-        return jsonify({"success": True, "trainingHistory": history}), 200
+        return jsonify  ({"success": True, "trainingHistory": history}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -139,7 +139,11 @@ def handle_404(e):
 @app.errorhandler(500)
 def handle_500(e):
     return jsonify({"error": "Internal server error"}), 500
-
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5001))
-    app.run(host='0.0.0.0', port=port, debug=True)
+    app.run(
+        host='0.0.0.0',
+        port=port,
+        debug=False,       
+        use_reloader=False 
+    )

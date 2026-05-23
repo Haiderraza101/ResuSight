@@ -5,7 +5,7 @@ print(df['Category'].value_counts())
 
 
 job_role_mapping = {
-    # ===== CORE SOFTWARE DEVELOPMENT =====
+   
     "Java Developer": [
         "Java Developer", "J2EE Developer", "Java & Devops Developer", "Java AWS Developer",
         "Java Architect", "Java Backend Developer", "Java Developer Intern", "Java Engineer",
@@ -1172,7 +1172,7 @@ df['Category'] = df['Category'].str.strip().str.lower().map(reverse_mapping)
 # Step 3: Drop rows where mapping failed (Category = NaN)
 df = df.dropna(subset=['Category'])
 
-# Step 4: Drop categories with less than 50 samples
+# Step 4: Drop categories with less than 190 samples
 category_counts = df['Category'].value_counts()
 valid_categories = category_counts[category_counts >= 190].index
 print(valid_categories)
